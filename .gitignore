@@ -1,7 +1,63 @@
+# Byte-compiled / optimized / DLL files
 __pycache__/
-.DS_Store
-.vscode*
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+.Python
+build/
+dist/
+*.egg-info/
+*.manifest
+*.bak
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*~
+
+# Logs and data
+*.log
+*.csv
+*.txt
+*.mp4
+*.gif
+*.png
+*.jpg
+*.jpeg
+
+# Model Checkpoints
+checkpoints/
+*.pth
+*.pt
+*.safetensors
+
+# Temporary files
+tmp/
+temp/
 tmp_examples*
 new_checkpoint*
 batch_test*
 nohup*
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Hugging Face and ModelScope downloads
+Wan2.2-T2V-A14B/
+Wan2.2-I2V-A14B/
+Wan2.2-TI2V-5B/
+Wan2.2-S2V-14B/
+Wan2.2-Animate-14B/

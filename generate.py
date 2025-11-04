@@ -7,12 +7,16 @@ import warnings
 from datetime import datetime
 
 warnings.filterwarnings('ignore')
+torch.backends.cuda.matmul.allow_tf32 = True
+
+
 
 import random
 
 import torch
 import torch.distributed as dist
-from PIL import Image
+
+
 
 import wan
 from wan.configs import MAX_AREA_CONFIGS, SIZE_CONFIGS, SUPPORTED_SIZES, WAN_CONFIGS

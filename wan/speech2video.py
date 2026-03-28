@@ -682,8 +682,8 @@ class WanS2V:
         if not hasattr(self, 'cosyvoice'):
             self.load_tts()
         speech_list = []
-        from cosyvoice.utils.file_utils import load_wav
         import torchaudio
+        from cosyvoice.utils.file_utils import load_wav
         prompt_speech_16k = load_wav(tts_prompt_audio, 16000)
         if tts_prompt_text is not None:
             for i in self.cosyvoice.inference_zero_shot(tts_text, tts_prompt_text, prompt_speech_16k):

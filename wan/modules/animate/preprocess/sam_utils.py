@@ -1,23 +1,20 @@
 # Copyright (c) 2025. Your modifications here.
 # This file wraps and extends sam2.utils.misc for custom modifications.
 
-from sam2.utils import misc as sam2_misc
-from sam2.utils.misc import * 
-from PIL import Image
-import numpy as np
-import torch
-from tqdm import tqdm
+import logging
 import os
 
-import logging
-
+import numpy as np
 import torch
 from hydra import compose
 from hydra.utils import instantiate
 from omegaconf import OmegaConf
-
-from sam2.utils.misc import AsyncVideoFrameLoader, _load_img_as_tensor
+from PIL import Image
 from sam2.build_sam import _load_checkpoint
+from sam2.utils import misc as sam2_misc
+from sam2.utils.misc import *
+from sam2.utils.misc import AsyncVideoFrameLoader, _load_img_as_tensor
+from tqdm import tqdm
 
 
 def _load_img_v2_as_tensor(img, image_size):

@@ -1,0 +1,3 @@
+## 2025-03-28 - Added tqdm descriptions
+**Learning:** For long-running, multi-step CLI tasks like video generation, adding descriptions (`desc="..."`) to `tqdm` progress bars provides crucial context and reassurance to the user about what is happening, vastly improving the perceived responsiveness and UX of the CLI.
+**Action:** Always verify that `tqdm` iterations in lengthy CLI pipelines have descriptive labels.

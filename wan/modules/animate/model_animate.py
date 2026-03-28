@@ -2,15 +2,16 @@
 import math
 import types
 from copy import deepcopy
-from einops import  rearrange
 from typing import List
+
 import numpy as np
 import torch
 import torch.cuda.amp as amp
 import torch.nn as nn
 from diffusers.configuration_utils import ConfigMixin, register_to_config
-from diffusers.models.modeling_utils import ModelMixin
 from diffusers.loaders import PeftAdapterMixin
+from diffusers.models.modeling_utils import ModelMixin
+from einops import rearrange
 
 from ...distributed.sequence_parallel import (
     distributed_attention,
@@ -18,23 +19,21 @@ from ...distributed.sequence_parallel import (
     get_rank,
     get_world_size,
 )
-
-
 from ..model import (
     Head,
     WanAttentionBlock,
     WanLayerNorm,
-    WanRMSNorm,
     WanModel,
+    WanRMSNorm,
     WanSelfAttention,
     flash_attention,
+    rope_apply,
     rope_params,
     sinusoidal_embedding_1d,
-    rope_apply
 )
-
-from .face_blocks import FaceEncoder, FaceAdapter
+from .face_blocks import FaceAdapter, FaceEncoder
 from .motion_encoder import Generator
+
 
 class HeadAnimate(Head):
 

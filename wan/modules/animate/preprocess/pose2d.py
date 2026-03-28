@@ -1,19 +1,18 @@
 # Copyright 2024-2025 The Alibaba Wan Team Authors. All rights reserved.
 import os
+from typing import List, Union
+
 import cv2
-from typing import Union, List
-
 import numpy as np
-import torch
 import onnxruntime
-
+import torch
 from pose2d_utils import (
-    read_img,
-    box_convert_simple,
     bbox_from_detector,
+    box_convert_simple,
     crop,
     keypoints_from_heatmaps,
-    load_pose_metas_from_kp2ds_seq
+    load_pose_metas_from_kp2ds_seq,
+    read_img,
 )
 
 

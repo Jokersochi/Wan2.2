@@ -1,9 +1,11 @@
 # Modified from ``https://github.com/wyhsirius/LIA``
 # Copyright 2024-2025 The Alibaba Wan Team Authors. All rights reserved.
+import math
+
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
-import math
+
 
 def custom_qr(input_tensor):
     original_dtype = input_tensor.dtype

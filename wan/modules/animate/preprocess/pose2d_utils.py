@@ -1,8 +1,9 @@
 # Copyright 2024-2025 The Alibaba Wan Team Authors. All rights reserved.
 import warnings
+from typing import List
+
 import cv2
 import numpy as np
-from typing import List
 from PIL import Image
 
 

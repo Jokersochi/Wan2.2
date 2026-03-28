@@ -1,14 +1,14 @@
 # Copyright 2024-2025 The Alibaba Wan Team Authors. All rights reserved.
+import copy
+import json
+import math
 import os
+from typing import List, NamedTuple
+
 import cv2
 import numpy as np
-import json
-from tqdm import tqdm
-import math 
-from typing import NamedTuple, List
-import copy
 from pose2d_utils import AAPoseMeta
-
+from tqdm import tqdm
 
 # load skeleton name and bone lines
 keypoint_list = [

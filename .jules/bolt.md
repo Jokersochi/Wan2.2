@@ -1,0 +1,3 @@
+## 2024-05-24 - [Avoid Redundant Empty Tensor Concatenation in PyTorch]
+**Learning:** In PyTorch, calling `torch.cat()` with an empty tensor always allocates new memory and performs a full copy of the data. This occurs even if one of the tensors being concatenated is empty. In the 3D RoPE application in `wan/modules/model.py`, `seq_len` often perfectly matches `x.size(1)`, meaning the remainder slice `x[i, seq_len:]` is empty. Unconditionally concatenating these causes a large redundant memory allocation and copy per loop iteration.
+**Action:** When concatenating a remainder slice that might be empty, wrap the `torch.cat` operation in a conditional check (e.g., `if seq_len < x.size(1):`) to prevent redundant memory allocation and improve performance.

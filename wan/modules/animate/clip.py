@@ -515,8 +515,9 @@ class CLIPModel:
             device=device)
         self.model = self.model.eval().requires_grad_(False)
         logging.info(f'loading {checkpoint_path}')
+        # Security: Prevent insecure deserialization
         self.model.load_state_dict(
-            torch.load(checkpoint_path, map_location='cpu'))
+            torch.load(checkpoint_path, map_location='cpu', weights_only=True))
 
         # init tokenizer
         self.tokenizer = HuggingfaceTokenizer(

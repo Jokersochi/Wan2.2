@@ -54,7 +54,9 @@ def rope_apply(x, grid_sizes, freqs):
         freqs_i_rank = freqs_i[(sp_rank * s_per_rank):((sp_rank + 1) *
                                                        s_per_rank), :, :]
         x_i = torch.view_as_real(x_i * freqs_i_rank).flatten(2)
-        x_i = torch.cat([x_i, x[i, s:]])
+        # Avoid zero-size tensor concatenation overhead
+        if s < x.size(1):
+            x_i = torch.cat([x_i, x[i, s:]])
 
         # append to collection
         output.append(x_i)

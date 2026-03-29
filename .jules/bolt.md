@@ -1,0 +1,3 @@
+## 2025-02-23 - PyTorch Zero-Size Tensor Concatenation Anti-Pattern
+**Learning:** In PyTorch, calling `torch.cat()` with an empty tensor always allocates new memory and performs an underlying copy, even if the result has the exact same shape as the other input tensor. When splitting frequencies and conditionally concatenating zero-size remaining elements (e.g. `x[i, seq_len:]`), the overhead is significant because it's executed per-sample in loops (such as RoPE embeddings).
+**Action:** When concatenating tensors iteratively, always wrap the concatenation operation with a size check (e.g., `if seq_len < x.size(1):`) to skip the execution entirely when the slice is empty, saving unnecessary memory allocation and copy overhead.

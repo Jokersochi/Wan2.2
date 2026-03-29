@@ -70,7 +70,9 @@ def rope_apply(x, grid_sizes, freqs, start=None):
         freqs_i = freqs[i, :s]
         # apply rotary embedding
         x_i = torch.view_as_real(x_i * freqs_i).flatten(2)
-        x_i = torch.cat([x_i, x[i, s:]])
+        # Avoid zero-size tensor concatenation overhead
+        if s < x.size(1):
+            x_i = torch.cat([x_i, x[i, s:]])
         # append to collection
         output.append(x_i)
     return torch.stack(output).float()
@@ -89,7 +91,9 @@ def rope_apply_usp(x, grid_sizes, freqs):
         freqs_i = freqs[i]
         freqs_i_rank = freqs_i
         x_i = torch.view_as_real(x_i * freqs_i_rank).flatten(2)
-        x_i = torch.cat([x_i, x[i, s:]])
+        # Avoid zero-size tensor concatenation overhead
+        if s < x.size(1):
+            x_i = torch.cat([x_i, x[i, s:]])
         # append to collection
         output.append(x_i)
     return torch.stack(output).float()

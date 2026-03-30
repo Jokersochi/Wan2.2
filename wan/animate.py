@@ -2,35 +2,33 @@
 import logging
 import math
 import os
-import cv2
 import types
 from copy import deepcopy
 from functools import partial
-from einops import rearrange
+
+import cv2
 import numpy as np
 import torch
-
 import torch.distributed as dist
-from peft import set_peft_model_state_dict
-from decord import VideoReader
-from tqdm import tqdm
 import torch.nn.functional as F
+from decord import VideoReader
+from einops import rearrange
+from peft import set_peft_model_state_dict
+from tqdm import tqdm
+
 from .distributed.fsdp import shard_model
 from .distributed.sequence_parallel import sp_attn_forward, sp_dit_forward
 from .distributed.util import get_world_size
-
-from .modules.animate import WanAnimateModel
-from .modules.animate import CLIPModel
+from .modules.animate import CLIPModel, WanAnimateModel
+from .modules.animate.animate_utils import TensorList, get_loraconfig
 from .modules.t5 import T5EncoderModel
 from .modules.vae2_1 import Wan2_1_VAE
-from .modules.animate.animate_utils import TensorList, get_loraconfig
 from .utils.fm_solvers import (
     FlowDPMSolverMultistepScheduler,
     get_sampling_sigmas,
     retrieve_timesteps,
 )
 from .utils.fm_solvers_unipc import FlowUniPCMultistepScheduler
-
 
 
 class WanAnimate:
@@ -185,7 +183,7 @@ class WanAnimate:
             )
             model.add_adapter(lora_config)
             lora_path = os.path.join(checkpoint_dir, config.lora_checkpoint)
-            peft_state_dict = torch.load(lora_path)["state_dict"]
+            peft_state_dict = torch.load(lora_path, weights_only=True)["state_dict"]
             set_peft_model_state_dict(model, peft_state_dict)
 
         if dit_fsdp:

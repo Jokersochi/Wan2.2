@@ -1,24 +1,34 @@
 # Copyright 2024-2025 The Alibaba Wan Team Authors. All rights reserved.
 import os
-import numpy as np
 import shutil
+
+import cv2
+import numpy as np
 import torch
 from diffusers import FluxKontextPipeline
-import cv2
 from loguru import logger
 from PIL import Image
+
 try:
     import moviepy.editor as mpy
 except:
     import moviepy as mpy
 
+import sam2.modeling.sam.transformer as transformer
 from decord import VideoReader
+from human_visualization import draw_aapose_by_meta_new
 from pose2d import Pose2d
 from pose2d_utils import AAPoseMeta
-from utils import resize_by_area, get_frame_indices, padding_resize, get_face_bboxes, get_aug_mask, get_mask_body_img
-from human_visualization import draw_aapose_by_meta_new
 from retarget_pose import get_retarget_pose
-import sam2.modeling.sam.transformer as transformer
+from utils import (
+    get_aug_mask,
+    get_face_bboxes,
+    get_frame_indices,
+    get_mask_body_img,
+    padding_resize,
+    resize_by_area,
+)
+
 transformer.USE_FLASH_ATTN = False
 transformer.MATH_KERNEL_ON = True
 transformer.OLD_GPU = True

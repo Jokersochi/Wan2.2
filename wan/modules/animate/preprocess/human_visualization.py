@@ -1,13 +1,14 @@
 # Copyright 2024-2025 The Alibaba Wan Team Authors. All rights reserved.
-import os
-import cv2
-import time
 import math
+import os
+import random
+import time
+from typing import Dict, List
+
+import cv2
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-from typing import Dict, List
-import random
 from pose2d_utils import AAPoseMeta
 
 

@@ -20,7 +20,6 @@ from wan.distributed.util import init_distributed_group
 from wan.utils.prompt_extend import DashScopePromptExpander, QwenPromptExpander
 from wan.utils.utils import merge_video_audio, save_video, str2bool
 
-
 EXAMPLE_PROMPT = {
     "t2v-A14B": {
         "prompt":

@@ -1,15 +1,16 @@
 # Copyright 2024-2025 The Alibaba Wan Team Authors. All rights reserved.
-from torch import nn
-import torch
-from typing import Tuple, Optional
-from einops import rearrange
-import torch.nn.functional as F
 import math
+from typing import Optional, Tuple
+
+import torch
+import torch.nn.functional as F
+from einops import rearrange
+from torch import nn
+
 from ...distributed.util import gather_forward, get_rank, get_world_size
 
-
 try:
-    from flash_attn import flash_attn_qkvpacked_func, flash_attn_func
+    from flash_attn import flash_attn_func, flash_attn_qkvpacked_func
 except ImportError:
     flash_attn_func = None
 

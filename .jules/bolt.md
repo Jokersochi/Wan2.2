@@ -1,0 +1,3 @@
+## 2024-05-14 - PyTorch torch.cat() With Empty Tensors Causes Redundant Memory Allocation
+**Learning:** In PyTorch, calling `torch.cat()` with an empty tensor (e.g., `torch.cat([x, empty_tensor])`) does not return a view of the original tensor. Instead, it allocates new memory and copies the entire tensor. In hot paths (like `rope_apply` applied during attention or model iterations), repeatedly appending empty padding slices causes significant performance overhead and unnecessary memory churn.
+**Action:** Always wrap conditional `torch.cat()` operations involving potential empty tensors with a size check (e.g., `if empty_tensor_size > 0:`) to bypass the concatenation entirely when the slice is empty.

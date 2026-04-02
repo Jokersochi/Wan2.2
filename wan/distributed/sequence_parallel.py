@@ -54,7 +54,10 @@ def rope_apply(x, grid_sizes, freqs):
         freqs_i_rank = freqs_i[(sp_rank * s_per_rank):((sp_rank + 1) *
                                                        s_per_rank), :, :]
         x_i = torch.view_as_real(x_i * freqs_i_rank).flatten(2)
-        x_i = torch.cat([x_i, x[i, s:]])
+        # Optimization: Skip torch.cat when the slice x[i, s:] is empty to avoid
+        # redundant memory allocation and data copying.
+        if s < x.size(1):
+            x_i = torch.cat([x_i, x[i, s:]])
 
         # append to collection
         output.append(x_i)

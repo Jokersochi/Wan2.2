@@ -364,7 +364,7 @@ class WanTI2V:
                 self.model.to(self.device)
                 torch.cuda.empty_cache()
 
-            for _, t in enumerate(tqdm(timesteps)):
+            for _, t in enumerate(tqdm(timesteps, desc="Sampling")):
                 latent_model_input = latents
                 timestep = [t]
 
@@ -564,7 +564,7 @@ class WanTI2V:
                 self.model.to(self.device)
                 torch.cuda.empty_cache()
 
-            for _, t in enumerate(tqdm(timesteps)):
+            for _, t in enumerate(tqdm(timesteps, desc="Sampling")):
                 latent_model_input = [latent.to(self.device)]
                 timestep = [t]
 

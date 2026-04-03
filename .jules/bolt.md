@@ -1,0 +1,3 @@
+## 2024-04-03 - Prevent empty tensor concatenation memory overhead
+**Learning:** Calling `torch.cat()` with an empty tensor (when `seq_len == x.size(1)`) always allocates new memory and triggers a costly copy of the tensor, rather than being a no-op. This is especially problematic in performance-critical code like RoPE implementations where large intermediate tensors are being built per iteration.
+**Action:** When conditionally concatenating tensors, wrap the operation in a size-check (e.g., `if seq_len < x.size(1):`) to prevent redundant memory allocation and copying when the slice would be empty.

@@ -59,7 +59,10 @@ def rope_apply(x, grid_sizes, freqs):
 
         # apply rotary embedding
         x_i = torch.view_as_real(x_i * freqs_i).flatten(2)
-        x_i = torch.cat([x_i, x[i, seq_len:]])
+        # Bolt Performance Fix: Conditionally concatenate to avoid redundant memory allocation
+        # and kernel overhead when seq_len matches target dimension
+        if seq_len < x.size(1):
+            x_i = torch.cat([x_i, x[i, seq_len:]])
 
         # append to collection
         output.append(x_i)
@@ -451,9 +454,11 @@ class WanModel(ModelMixin, ConfigMixin):
         x = [u.flatten(2).transpose(1, 2) for u in x]
         seq_lens = torch.tensor([u.size(1) for u in x], dtype=torch.long)
         assert seq_lens.max() <= seq_len
+        # Bolt Performance Fix: Conditionally apply padding concatenation only when needed
+        # avoiding empty tensor allocations in torch.cat
         x = torch.cat([
-            torch.cat([u, u.new_zeros(1, seq_len - u.size(1), u.size(2))],
-                      dim=1) for u in x
+            torch.cat([u, u.new_zeros(1, seq_len - u.size(1), u.size(2))], dim=1) if u.size(1) < seq_len else u
+            for u in x
         ])
 
         # time embeddings
@@ -470,10 +475,10 @@ class WanModel(ModelMixin, ConfigMixin):
 
         # context
         context_lens = None
+        # Bolt Performance Fix: Conditionally apply context padding
         context = self.text_embedding(
             torch.stack([
-                torch.cat(
-                    [u, u.new_zeros(self.text_len - u.size(0), u.size(1))])
+                torch.cat([u, u.new_zeros(self.text_len - u.size(0), u.size(1))]) if u.size(0) < self.text_len else u
                 for u in context
             ]))
 

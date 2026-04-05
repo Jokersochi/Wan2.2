@@ -1,0 +1,3 @@
+## 2025-02-14 - PyTorch Zero-Tensor Padding Optimization
+**Learning:** In PyTorch, creating dynamic 'padding' zero-tensors (e.g., using `new_zeros()`) with a size of 0 and concatenating them introduces unnecessary memory allocation and kernel overhead.
+**Action:** Bypass this by using inline conditional checks (e.g., `torch.cat([u, u.new_zeros(...)]) if size < target_length else u`) before operations to ensure identically functional outputs with reduced overhead.

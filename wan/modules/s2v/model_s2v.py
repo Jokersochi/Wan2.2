@@ -800,8 +800,7 @@ class WanModel_S2V(ModelMixin, ConfigMixin):
         context_lens = None
         context = self.text_embedding(
             torch.stack([
-                torch.cat(
-                    [u, u.new_zeros(self.text_len - u.size(0), u.size(1))])
+                torch.cat([u, u.new_zeros(self.text_len - u.size(0), u.size(1))]) if u.size(0) < self.text_len else u
                 for u in context
             ]))
 

@@ -92,8 +92,9 @@ def sp_dit_forward(
     seq_lens = torch.tensor([u.size(1) for u in x], dtype=torch.long)
     assert seq_lens.max() <= seq_len
     x = torch.cat([
+        # Skip concat if no padding is needed to avoid redundant memory allocation
         torch.cat([u, u.new_zeros(1, seq_len - u.size(1), u.size(2))], dim=1)
-        for u in x
+        if seq_len > u.size(1) else u for u in x
     ])
 
     # time embeddings
@@ -112,8 +113,9 @@ def sp_dit_forward(
     context_lens = None
     context = self.text_embedding(
         torch.stack([
+            # Skip concat if no padding is needed to avoid redundant memory allocation
             torch.cat([u, u.new_zeros(self.text_len - u.size(0), u.size(1))])
-            for u in context
+            if self.text_len > u.size(0) else u for u in context
         ]))
 
     # Context Parallel

@@ -451,9 +451,10 @@ class WanModel(ModelMixin, ConfigMixin):
         x = [u.flatten(2).transpose(1, 2) for u in x]
         seq_lens = torch.tensor([u.size(1) for u in x], dtype=torch.long)
         assert seq_lens.max() <= seq_len
+        # avoid unnecessary zero-tensor allocation and concatenation overhead when padding is not needed
         x = torch.cat([
             torch.cat([u, u.new_zeros(1, seq_len - u.size(1), u.size(2))],
-                      dim=1) for u in x
+                      dim=1) if seq_len > u.size(1) else u for u in x
         ])
 
         # time embeddings
@@ -470,11 +471,12 @@ class WanModel(ModelMixin, ConfigMixin):
 
         # context
         context_lens = None
+        # avoid unnecessary zero-tensor allocation and concatenation overhead when padding is not needed
         context = self.text_embedding(
             torch.stack([
                 torch.cat(
                     [u, u.new_zeros(self.text_len - u.size(0), u.size(1))])
-                for u in context
+                if self.text_len > u.size(0) else u for u in context
             ]))
 
         # arguments

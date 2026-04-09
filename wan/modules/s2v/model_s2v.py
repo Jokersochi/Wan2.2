@@ -599,7 +599,7 @@ class WanModel_S2V(ModelMixin, ConfigMixin):
         return x, seq_lens, rope_embs, mask_input
 
     def after_transformer_block(self, block_idx, hidden_states):
-        if block_idx in self.audio_injector.injected_block_id.keys():
+        if block_idx in self.audio_injector.injected_block_id:
             audio_attn_id = self.audio_injector.injected_block_id[block_idx]
             audio_emb = self.merged_audio_emb  # b f n c
             num_frames = audio_emb.shape[1]

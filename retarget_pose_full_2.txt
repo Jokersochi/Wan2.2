@@ -1,0 +1,342 @@
+CHUNK 530
+                keypoints[idx] = None
+        new_keypoints = keypoints.copy()
+
+        # get hand keypoints
+        keypoints_hand = {'left' : data_to_json[id]['keypoints_left_hand'], 'right' : data_to_json[id]['keypoints_right_hand']}
+        # Normalize hand coordinates to 0-1 range
+        for hand_idx in range(len(data_to_json[id]['keypoints_left_hand'])):
+            data_to_json[id]['keypoints_left_hand'][hand_idx][0] = data_to_json[id]['keypoints_left_hand'][hand_idx][0] / src_width
+            data_to_json[id]['keypoints_left_hand'][hand_idx][1] = data_to_json[id]['keypoints_left_hand'][hand_idx][1] / src_height
+
+        for hand_idx in range(len(data_to_json[id]['keypoints_right_hand'])):
+            data_to_json[id]['keypoints_right_hand'][hand_idx][0] = data_to_json[id]['keypoints_right_hand'][hand_idx][0] / src_width
+            data_to_json[id]['keypoints_right_hand'][hand_idx][1] = data_to_json[id]['keypoints_right_hand'][hand_idx][1] / src_height
+
+
+        frame_info = get_scaled_pose((height, width), (src_height, src_width), new_keypoints, keypoints_hand, bone_ratio_list, delta_ground_x, delta_ground_y, rescaled_src_ground_x, body_flag, id, scale_min)
+        outputs.append(frame_info)
+
+    return outputs
+
+CHUNK 550
+
+def calculate_scale_ratio(skeleton, skeleton_edit, scale_ratio_flag):
+    if scale_ratio_flag:
+
+        headw = max(skeleton['keypoints_body'][0][0], skeleton['keypoints_body'][14][0], skeleton['keypoints_body'][15][0], skeleton['keypoints_body'][16][0], skeleton['keypoints_body'][17][0]) - \
+                    min(skeleton['keypoints_body'][0][0], skeleton['keypoints_body'][14][0], skeleton['keypoints_body'][15][0], skeleton['keypoints_body'][16][0], skeleton['keypoints_body'][17][0])
+        headw_edit = max(skeleton_edit['keypoints_body'][0][0], skeleton_edit['keypoints_body'][14][0], skeleton_edit['keypoints_body'][15][0], skeleton_edit['keypoints_body'][16][0], skeleton_edit['keypoints_body'][17][0]) - \
+                    min(skeleton_edit['keypoints_body'][0][0], skeleton_edit['keypoints_body'][14][0], skeleton_edit['keypoints_body'][15][0], skeleton_edit['keypoints_body'][16][0], skeleton_edit['keypoints_body'][17][0])
+        headw_ratio = headw / headw_edit
+
+        _, _, shoulder = get_length(skeleton, [6,3])
+        _, _, shoulder_edit = get_length(skeleton_edit, [6,3])
+        shoulder_ratio = shoulder / shoulder_edit
+
+        return max(headw_ratio, shoulder_ratio)
+
+    else:
+        return 1
+
+
+CHUNK 570
+
+def retarget_pose(src_skeleton, dst_skeleton, all_src_skeleton, src_skeleton_edit, dst_skeleton_edit, threshold=0.4):
+
+    if src_skeleton_edit is not None and dst_skeleton_edit is not None:
+        use_edit_for_base = True
+    else:
+        use_edit_for_base = False
+
+    src_skeleton_ori = copy.deepcopy(src_skeleton)
+
+    dst_skeleton_ori_h, dst_skeleton_ori_w = dst_skeleton['height'], dst_skeleton['width']
+    if src_skeleton['keypoints_body'][0] != None and src_skeleton['keypoints_body'][10] != None and src_skeleton['keypoints_body'][13] != None and \
+        dst_skeleton['keypoints_body'][0] != None and dst_skeleton['keypoints_body'][10] != None and dst_skeleton['keypoints_body'][13] != None and \
+            src_skeleton['keypoints_body'][0][2] > 0.5 and src_skeleton['keypoints_body'][10][2] > 0.5 and src_skeleton['keypoints_body'][13][2] > 0.5 and \
+        dst_skeleton['keypoints_body'][0][2] > 0.5 and dst_skeleton['keypoints_body'][10][2] > 0.5 and dst_skeleton['keypoints_body'][13][2] > 0.5:
+
+        src_height = src_skeleton['height'] * abs(
+            (src_skeleton['keypoints_body'][10][1] + src_skeleton['keypoints_body'][13][1]) / 2 -
+            src_skeleton['keypoints_body'][0][1])
+        dst_height = dst_skeleton['height'] * abs(
+CHUNK 590
+            (dst_skeleton['keypoints_body'][10][1] + dst_skeleton['keypoints_body'][13][1]) / 2 -
+            dst_skeleton['keypoints_body'][0][1])
+        scale_min = 1.0 * src_height / dst_height
+    elif src_skeleton['keypoints_body'][0] != None and src_skeleton['keypoints_body'][8] != None and src_skeleton['keypoints_body'][11] != None and \
+        dst_skeleton['keypoints_body'][0] != None and dst_skeleton['keypoints_body'][8] != None and dst_skeleton['keypoints_body'][11] != None and \
+            src_skeleton['keypoints_body'][0][2] > 0.5 and src_skeleton['keypoints_body'][8][2] > 0.5 and src_skeleton['keypoints_body'][11][2] > 0.5 and \
+        dst_skeleton['keypoints_body'][0][2] > 0.5 and dst_skeleton['keypoints_body'][8][2] > 0.5 and dst_skeleton['keypoints_body'][11][2] > 0.5:
+
+        src_height = src_skeleton['height'] * abs(
+            (src_skeleton['keypoints_body'][8][1] + src_skeleton['keypoints_body'][11][1]) / 2 -
+            src_skeleton['keypoints_body'][0][1])
+        dst_height = dst_skeleton['height'] * abs(
+            (dst_skeleton['keypoints_body'][8][1] + dst_skeleton['keypoints_body'][11][1]) / 2 -
+            dst_skeleton['keypoints_body'][0][1])
+        scale_min = 1.0 * src_height / dst_height
+    else:
+        scale_min = np.sqrt(src_skeleton['height'] * src_skeleton['width']) / np.sqrt(dst_skeleton['height'] * dst_skeleton['width'])
+
+    if use_edit_for_base:
+        scale_ratio_flag = False
+CHUNK 610
+        if src_skeleton_edit['keypoints_body'][0] != None and src_skeleton_edit['keypoints_body'][10] != None and src_skeleton_edit['keypoints_body'][13] != None and \
+            dst_skeleton_edit['keypoints_body'][0] != None and dst_skeleton_edit['keypoints_body'][10] != None and dst_skeleton_edit['keypoints_body'][13] != None and \
+                src_skeleton_edit['keypoints_body'][0][2] > 0.5 and src_skeleton_edit['keypoints_body'][10][2] > 0.5 and src_skeleton_edit['keypoints_body'][13][2] > 0.5 and \
+            dst_skeleton_edit['keypoints_body'][0][2] > 0.5 and dst_skeleton_edit['keypoints_body'][10][2] > 0.5 and dst_skeleton_edit['keypoints_body'][13][2] > 0.5:
+
+            src_height_edit = src_skeleton_edit['height'] * abs(
+                (src_skeleton_edit['keypoints_body'][10][1] + src_skeleton_edit['keypoints_body'][13][1]) / 2 -
+                src_skeleton_edit['keypoints_body'][0][1])
+            dst_height_edit = dst_skeleton_edit['height'] * abs(
+                (dst_skeleton_edit['keypoints_body'][10][1] + dst_skeleton_edit['keypoints_body'][13][1]) / 2 -
+                dst_skeleton_edit['keypoints_body'][0][1])
+            scale_min_edit = 1.0 * src_height_edit / dst_height_edit
+        elif src_skeleton_edit['keypoints_body'][0] != None and src_skeleton_edit['keypoints_body'][8] != None and src_skeleton_edit['keypoints_body'][11] != None and \
+            dst_skeleton_edit['keypoints_body'][0] != None and dst_skeleton_edit['keypoints_body'][8] != None and dst_skeleton_edit['keypoints_body'][11] != None and \
+                src_skeleton_edit['keypoints_body'][0][2] > 0.5 and src_skeleton_edit['keypoints_body'][8][2] > 0.5 and src_skeleton_edit['keypoints_body'][11][2] > 0.5 and \
+            dst_skeleton_edit['keypoints_body'][0][2] > 0.5 and dst_skeleton_edit['keypoints_body'][8][2] > 0.5 and dst_skeleton_edit['keypoints_body'][11][2] > 0.5:
+
+            src_height_edit = src_skeleton_edit['height'] * abs(
+                (src_skeleton_edit['keypoints_body'][8][1] + src_skeleton_edit['keypoints_body'][11][1]) / 2 -
+                src_skeleton_edit['keypoints_body'][0][1])
+CHUNK 630
+            dst_height_edit = dst_skeleton_edit['height'] * abs(
+                (dst_skeleton_edit['keypoints_body'][8][1] + dst_skeleton_edit['keypoints_body'][11][1]) / 2 -
+                dst_skeleton_edit['keypoints_body'][0][1])
+            scale_min_edit = 1.0 * src_height_edit / dst_height_edit
+        else:
+            scale_min_edit = np.sqrt(src_skeleton_edit['height'] * src_skeleton_edit['width']) / np.sqrt(dst_skeleton_edit['height'] * dst_skeleton_edit['width'])
+            scale_ratio_flag = True
+
+        # Flux may change the scale, compensate for it here
+        ratio_src = calculate_scale_ratio(src_skeleton, src_skeleton_edit, scale_ratio_flag)
+        ratio_dst = calculate_scale_ratio(dst_skeleton, dst_skeleton_edit, scale_ratio_flag)
+
+        dst_skeleton_edit['height'] = int(dst_skeleton_edit['height'] * scale_min_edit)
+        dst_skeleton_edit['width'] = int(dst_skeleton_edit['width'] * scale_min_edit)
+        for idx in range(len(dst_skeleton_edit['keypoints_left_hand'])):
+            dst_skeleton_edit['keypoints_left_hand'][idx][0] *= scale_min_edit
+            dst_skeleton_edit['keypoints_left_hand'][idx][1] *= scale_min_edit
+        for idx in range(len(dst_skeleton_edit['keypoints_right_hand'])):
+            dst_skeleton_edit['keypoints_right_hand'][idx][0] *= scale_min_edit
+            dst_skeleton_edit['keypoints_right_hand'][idx][1] *= scale_min_edit
+CHUNK 650
+
+
+    dst_skeleton['height'] = int(dst_skeleton['height'] * scale_min)
+    dst_skeleton['width'] = int(dst_skeleton['width'] * scale_min)
+    for idx in range(len(dst_skeleton['keypoints_left_hand'])):
+        dst_skeleton['keypoints_left_hand'][idx][0] *= scale_min
+        dst_skeleton['keypoints_left_hand'][idx][1] *= scale_min
+    for idx in range(len(dst_skeleton['keypoints_right_hand'])):
+        dst_skeleton['keypoints_right_hand'][idx][0] *= scale_min
+        dst_skeleton['keypoints_right_hand'][idx][1] *= scale_min
+
+
+    dst_body_flag = check_full_body(dst_skeleton['keypoints_body'], threshold)
+    src_body_flag = check_full_body(src_skeleton_ori['keypoints_body'], threshold)
+    body_flag = check_full_body_both(dst_body_flag, src_body_flag)
+    #print('body_flag: ', body_flag)
+
+    if use_edit_for_base:
+        src_skeleton_edit = fix_lack_keypoints_use_sym(src_skeleton_edit)
+        dst_skeleton_edit = fix_lack_keypoints_use_sym(dst_skeleton_edit)
+CHUNK 670
+    else:
+        src_skeleton = fix_lack_keypoints_use_sym(src_skeleton)
+        dst_skeleton = fix_lack_keypoints_use_sym(dst_skeleton)
+
+    none_idx = []
+    for idx in range(len(dst_skeleton['keypoints_body'])):
+        if dst_skeleton['keypoints_body'][idx] == None or src_skeleton['keypoints_body'][idx] == None:
+            src_skeleton['keypoints_body'][idx] = None
+            dst_skeleton['keypoints_body'][idx] = None
+            none_idx.append(idx)
+
+    # get bone ratio list
+    ratio_list, src_length_list, dst_length_list = [], [], []
+    for idx, limb in enumerate(limbSeq):
+        if use_edit_for_base:
+            src_X, src_Y, src_length = get_length(src_skeleton_edit, limb)
+            dst_X, dst_Y, dst_length = get_length(dst_skeleton_edit, limb)
+
+            if src_X is None or src_Y is None or dst_X is None or dst_Y is None:
+                ratio = -1
+CHUNK 690
+            else:
+                ratio = 1.0 * dst_length * ratio_dst / src_length / ratio_src
+
+        else:
+            src_X, src_Y, src_length = get_length(src_skeleton, limb)
+            dst_X, dst_Y, dst_length = get_length(dst_skeleton, limb)
+
+            if src_X is None or src_Y is None or dst_X is None or dst_Y is None:
+                ratio = -1
+            else:
+                ratio = 1.0 * dst_length / src_length
+
+        ratio_list.append(ratio)
+        src_length_list.append(src_length)
+        dst_length_list.append(dst_length)
+
+    for idx, ratio in enumerate(ratio_list):
+        if ratio == -1:
+            if ratio_list[0] != -1 and ratio_list[1] != -1:
+                ratio_list[idx] = (ratio_list[0] + ratio_list[1]) / 2
+CHUNK 710
+
+    # Consider adding constraints when Flux fails to correct head pose, causing neck issues.
+    # if ratio_list[12] > (ratio_list[0]+ratio_list[1])/2*1.25:
+    #     ratio_list[12] = (ratio_list[0]+ratio_list[1])/2*1.25
+
+    ratio_list, src_length_list, dst_length_list = rescale_shorten_skeleton(ratio_list, src_length_list, dst_length_list)
+
+    rescaled_src_skeleton_ori = rescale_skeleton(src_skeleton_ori['height'], src_skeleton_ori['width'],
+                                                 src_skeleton_ori['keypoints_body'], ratio_list)
+
+    # get global translation offset_x and offset_y
+    if body_flag == 'full_body':
+        #print('use foot mark.')
+        dst_ground_y = max(dst_skeleton['keypoints_body'][10][1], dst_skeleton['keypoints_body'][13][1]) * dst_skeleton[
+            'height']
+        # The midpoint between toe and ankle
+        if dst_skeleton['keypoints_body'][18] != None and dst_skeleton['keypoints_body'][19] != None:
+            right_foot_mid = (dst_skeleton['keypoints_body'][10][1] + dst_skeleton['keypoints_body'][19][1]) / 2
+            left_foot_mid = (dst_skeleton['keypoints_body'][13][1] + dst_skeleton['keypoints_body'][18][1]) / 2
+            dst_ground_y = max(left_foot_mid, right_foot_mid) * dst_skeleton['height']
+CHUNK 730
+
+        rescaled_src_ground_y = max(rescaled_src_skeleton_ori[10][1], rescaled_src_skeleton_ori[13][1])
+        delta_ground_y = rescaled_src_ground_y - dst_ground_y
+
+        dst_ground_x = (dst_skeleton['keypoints_body'][8][0] + dst_skeleton['keypoints_body'][11][0]) * dst_skeleton[
+            'width'] / 2
+        rescaled_src_ground_x = (rescaled_src_skeleton_ori[8][0] + rescaled_src_skeleton_ori[11][0]) / 2
+        delta_ground_x = rescaled_src_ground_x - dst_ground_x
+        delta_x, delta_y = delta_ground_x, delta_ground_y
+
+    else:
+        #print('use neck mark.')
+        # use neck keypoint as mark
+        src_neck_y = rescaled_src_skeleton_ori[1][1]
+        dst_neck_y = dst_skeleton['keypoints_body'][1][1]
+        delta_neck_y = src_neck_y - dst_neck_y * dst_skeleton['height']
+
+        src_neck_x = rescaled_src_skeleton_ori[1][0]
+        dst_neck_x = dst_skeleton['keypoints_body'][1][0]
+        delta_neck_x = src_neck_x - dst_neck_x * dst_skeleton['width']
+CHUNK 750
+        delta_x, delta_y = delta_neck_x, delta_neck_y
+        rescaled_src_ground_x = src_neck_x
+
+
+    dst_shape = (dst_skeleton_ori_w, dst_skeleton_ori_h)
+    output = write_to_poses(all_src_skeleton, none_idx, dst_shape, ratio_list, delta_x, delta_y,
+                                rescaled_src_ground_x, body_flag, scale_min)
+    return output
+
+
+def get_retarget_pose(tpl_pose_meta0, refer_pose_meta, tpl_pose_metas, tql_edit_pose_meta0, refer_edit_pose_meta):
+
+    for key, value in tpl_pose_meta0.items():
+        if type(value) is np.ndarray:
+            if key in ['keypoints_left_hand', 'keypoints_right_hand']:
+                value = value * np.array([[tpl_pose_meta0["width"], tpl_pose_meta0["height"], 1.0]])
+            if not isinstance(value, list):
+                value = value.tolist()
+        tpl_pose_meta0[key] = value
+
+CHUNK 770
+    for key, value in refer_pose_meta.items():
+        if type(value) is np.ndarray:
+            if key in ['keypoints_left_hand', 'keypoints_right_hand']:
+                value = value * np.array([[refer_pose_meta["width"], refer_pose_meta["height"], 1.0]])
+            if not isinstance(value, list):
+                value = value.tolist()
+        refer_pose_meta[key] = value
+
+    tpl_pose_metas_new = []
+    for meta in tpl_pose_metas:
+        for key, value in meta.items():
+            if type(value) is np.ndarray:
+                if key in ['keypoints_left_hand', 'keypoints_right_hand']:
+                    value = value * np.array([[meta["width"], meta["height"], 1.0]])
+                if not isinstance(value, list):
+                    value = value.tolist()
+            meta[key] = value
+        tpl_pose_metas_new.append(meta)
+
+    if tql_edit_pose_meta0 is not None:
+CHUNK 790
+        for key, value in tql_edit_pose_meta0.items():
+            if type(value) is np.ndarray:
+                if key in ['keypoints_left_hand', 'keypoints_right_hand']:
+                    value = value * np.array([[tql_edit_pose_meta0["width"], tql_edit_pose_meta0["height"], 1.0]])
+                if not isinstance(value, list):
+                    value = value.tolist()
+            tql_edit_pose_meta0[key] = value
+
+    if refer_edit_pose_meta is not None:
+        for key, value in refer_edit_pose_meta.items():
+            if type(value) is np.ndarray:
+                if key in ['keypoints_left_hand', 'keypoints_right_hand']:
+                    value = value * np.array([[refer_edit_pose_meta["width"], refer_edit_pose_meta["height"], 1.0]])
+                if not isinstance(value, list):
+                    value = value.tolist()
+            refer_edit_pose_meta[key] = value
+
+    retarget_tpl_pose_metas = retarget_pose(tpl_pose_meta0, refer_pose_meta, tpl_pose_metas_new, tql_edit_pose_meta0, refer_edit_pose_meta)
+
+    pose_metas = []
+CHUNK 810
+    for meta in retarget_tpl_pose_metas:
+        pose_meta = AAPoseMeta()
+        width, height = meta["width"], meta["height"]
+        pose_meta.width = width
+        pose_meta.height = height
+        pose_meta.kps_body = np.array(meta["keypoints_body"])[:, :2] * (width, height)
+        pose_meta.kps_body_p = np.array(meta["keypoints_body"])[:, 2]
+
+        kps_lhand = []
+        kps_lhand_p = []
+        for each_kps_lhand in meta["keypoints_left_hand"]:
+            if each_kps_lhand is not None:
+                kps_lhand.append([each_kps_lhand.x, each_kps_lhand.y])
+                kps_lhand_p.append(each_kps_lhand.score)
+            else:
+                kps_lhand.append([None, None])
+                kps_lhand_p.append(0.0)
+
+        pose_meta.kps_lhand = np.array(kps_lhand)
+        pose_meta.kps_lhand_p = np.array(kps_lhand_p)
+CHUNK 830
+
+        kps_rhand = []
+        kps_rhand_p = []
+        for each_kps_rhand in meta["keypoints_right_hand"]:
+            if each_kps_rhand is not None:
+                kps_rhand.append([each_kps_rhand.x, each_kps_rhand.y])
+                kps_rhand_p.append(each_kps_rhand.score)
+            else:
+                kps_rhand.append([None, None])
+                kps_rhand_p.append(0.0)
+
+        pose_meta.kps_rhand = np.array(kps_rhand)
+        pose_meta.kps_rhand_p = np.array(kps_rhand_p)
+
+        pose_metas.append(pose_meta)
+
+    return pose_metas
+
+CHUNK 850
+CHUNK 870
+CHUNK 890
+CHUNK 910
+CHUNK 930
+CHUNK 950
+CHUNK 970
+CHUNK 990

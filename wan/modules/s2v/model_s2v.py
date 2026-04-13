@@ -798,10 +798,12 @@ class WanModel_S2V(ModelMixin, ConfigMixin):
 
         # context
         context_lens = None
+        # bolt: bypass torch.cat if padding size is 0 to avoid memory allocation and copying overhead
         context = self.text_embedding(
             torch.stack([
                 torch.cat(
                     [u, u.new_zeros(self.text_len - u.size(0), u.size(1))])
+                if self.text_len > u.size(0) else u
                 for u in context
             ]))
 

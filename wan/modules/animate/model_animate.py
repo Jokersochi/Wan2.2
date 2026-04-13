@@ -397,9 +397,10 @@ class WanAnimateModel(ModelMixin, ConfigMixin, PeftAdapterMixin):
         x = [u.flatten(2).transpose(1, 2) for u in x]
         seq_lens = torch.tensor([u.size(1) for u in x], dtype=torch.long)
         assert seq_lens.max() <= seq_len
+        # bolt: bypass torch.cat if padding size is 0 to avoid memory allocation and copying overhead
         x = torch.cat([
             torch.cat([u, u.new_zeros(1, seq_len - u.size(1), u.size(2))],
-                      dim=1) for u in x
+                      dim=1) if seq_len > u.size(1) else u for u in x
         ])
 
         # time embeddings
@@ -412,10 +413,12 @@ class WanAnimateModel(ModelMixin, ConfigMixin, PeftAdapterMixin):
 
         # context
         context_lens = None
+        # bolt: bypass torch.cat if padding size is 0 to avoid memory allocation and copying overhead
         context = self.text_embedding(
             torch.stack([
                 torch.cat(
                     [u, u.new_zeros(self.text_len - u.size(0), u.size(1))])
+                if self.text_len > u.size(0) else u
                 for u in context
             ]))
 

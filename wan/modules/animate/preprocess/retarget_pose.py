@@ -520,7 +520,7 @@ def check_full_body_both(flag1, flag2):
 def write_to_poses(data_to_json, none_idx, dst_shape, bone_ratio_list, delta_ground_x, delta_ground_y, rescaled_src_ground_x, body_flag, scale_min):
     outputs = []
     length = len(data_to_json)
-    for id in tqdm(range(length)):
+    for id in tqdm(range(length), desc="Retargeting pose keypoints"):
 
         src_height, src_width = data_to_json[id]['height'], data_to_json[id]['width']
         width, height = dst_shape

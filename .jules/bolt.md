@@ -1,0 +1,3 @@
+## 2025-02-23 - Range Len Anti-pattern
+**Learning:** Found multiple instances of `for i in range(len(list)): list[i] = ...` which is an anti-pattern. Replacing it with `for i, item in enumerate(list)` is slightly faster and much more readable, or using list comprehensions. Memory explicitly notes that replacing `range(len())` with direct iteration for in-place modifications or `enumerate()` for reassignments is measured to be 5-10% faster in nested lists in `wan/modules/animate/preprocess/retarget_pose.py`.
+**Action:** Replace these occurrences in `wan/modules/animate/preprocess/retarget_pose.py` with `enumerate()`.

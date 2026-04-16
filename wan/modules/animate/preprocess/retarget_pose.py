@@ -116,9 +116,9 @@ def deal_hand_keypoints(hand_res, r_ratio, l_ratio, hand_score_th = 0.5):
 
     length = len(hand_res['left'])
 
-    for i in range(length):
+    for left_res, right_res in zip(hand_res['left'], hand_res['right']):
         # left hand
-        if hand_res['left'][i][2] < hand_score_th:
+        if left_res[2] < hand_score_th:
             left_hand.append(
                 Keypoint(
                     x=-1,
@@ -129,14 +129,14 @@ def deal_hand_keypoints(hand_res, r_ratio, l_ratio, hand_score_th = 0.5):
         else:
             left_hand.append(
                 Keypoint(
-                    x=hand_res['left'][i][0] * l_ratio - left_delta_x,
-                    y=hand_res['left'][i][1] * l_ratio - left_delta_y,
-                    score = hand_res['left'][i][2]
+                    x=left_res[0] * l_ratio - left_delta_x,
+                    y=left_res[1] * l_ratio - left_delta_y,
+                    score = left_res[2]
                 )
             )
 
         # right hand
-        if hand_res['right'][i][2] < hand_score_th:
+        if right_res[2] < hand_score_th:
             right_hand.append(
                 Keypoint(
                     x=-1,
@@ -147,9 +147,9 @@ def deal_hand_keypoints(hand_res, r_ratio, l_ratio, hand_score_th = 0.5):
         else:
             right_hand.append(
                 Keypoint(
-                    x=hand_res['right'][i][0] * r_ratio - right_delta_x,
-                    y=hand_res['right'][i][1] * r_ratio - right_delta_y,
-                    score = hand_res['right'][i][2]
+                    x=right_res[0] * r_ratio - right_delta_x,
+                    y=right_res[1] * r_ratio - right_delta_y,
+                    score = right_res[2]
                 )
             )
 
@@ -166,11 +166,11 @@ def get_scaled_pose(canvas, src_canvas, keypoints, keypoints_hand, bone_ratio_li
     angle_list = [ ]
 
     # keypoints from 0-1 to H/W range
-    for idx in range(len(keypoints)):
-        if keypoints[idx] is None or len(keypoints[idx]) == 0:
+    for idx, kp in enumerate(keypoints):
+        if kp is None or len(kp) == 0:
             continue
 
-        keypoints[idx] = [keypoints[idx][0] * src_W, keypoints[idx][1] * src_H, keypoints[idx][2]]
+        keypoints[idx] = [kp[0] * src_W, kp[1] * src_H, kp[2]]
 
     # first traverse, get new_length_list and angle_list
     for idx, (k1_index, k2_index) in enumerate(limbSeq):
@@ -235,8 +235,8 @@ def get_scaled_pose(canvas, src_canvas, keypoints, keypoints_hand, bone_ratio_li
             delta_ground_x += delta_ground_x_offset_first_frame
 
     # offset all keypoints
-    for idx in range(len(rescale_keypoints)):
-        if rescale_keypoints[idx] is None or len(rescale_keypoints[idx]) == 0 :
+    for idx, kp in enumerate(rescale_keypoints):
+        if kp is None or len(kp) == 0 :
             continue
         rescale_keypoints[idx][0] -= delta_ground_x
         rescale_keypoints[idx][1] -= delta_ground_y
@@ -314,11 +314,11 @@ def rescale_skeleton(H, W, keypoints, bone_ratio_list):
     angle_list = [ ]
 
     # keypoints from 0-1 to H/W range
-    for idx in range(len(rescale_keypoints)):
-        if rescale_keypoints[idx] is None or len(rescale_keypoints[idx]) == 0:
+    for idx, kp in enumerate(rescale_keypoints):
+        if kp is None or len(kp) == 0:
             continue
 
-        rescale_keypoints[idx] = [rescale_keypoints[idx][0] * W, rescale_keypoints[idx][1] * H]
+        rescale_keypoints[idx] = [kp[0] * W, kp[1] * H]
 
     # first traverse, get new_length_list and angle_list
     for idx, (k1_index, k2_index) in enumerate(limbSeq):
@@ -533,13 +533,13 @@ def write_to_poses(data_to_json, none_idx, dst_shape, bone_ratio_list, delta_gro
         # get hand keypoints
         keypoints_hand = {'left' : data_to_json[id]['keypoints_left_hand'], 'right' : data_to_json[id]['keypoints_right_hand']}
         # Normalize hand coordinates to 0-1 range
-        for hand_idx in range(len(data_to_json[id]['keypoints_left_hand'])):
-            data_to_json[id]['keypoints_left_hand'][hand_idx][0] = data_to_json[id]['keypoints_left_hand'][hand_idx][0] / src_width
-            data_to_json[id]['keypoints_left_hand'][hand_idx][1] = data_to_json[id]['keypoints_left_hand'][hand_idx][1] / src_height
+        for hand_idx, hp in enumerate(data_to_json[id]['keypoints_left_hand']):
+            data_to_json[id]['keypoints_left_hand'][hand_idx][0] = hp[0] / src_width
+            data_to_json[id]['keypoints_left_hand'][hand_idx][1] = hp[1] / src_height
 
-        for hand_idx in range(len(data_to_json[id]['keypoints_right_hand'])):
-            data_to_json[id]['keypoints_right_hand'][hand_idx][0] = data_to_json[id]['keypoints_right_hand'][hand_idx][0] / src_width
-            data_to_json[id]['keypoints_right_hand'][hand_idx][1] = data_to_json[id]['keypoints_right_hand'][hand_idx][1] / src_height
+        for hand_idx, hp in enumerate(data_to_json[id]['keypoints_right_hand']):
+            data_to_json[id]['keypoints_right_hand'][hand_idx][0] = hp[0] / src_width
+            data_to_json[id]['keypoints_right_hand'][hand_idx][1] = hp[1] / src_height
 
         
         frame_info = get_scaled_pose((height, width), (src_height, src_width), new_keypoints, keypoints_hand, bone_ratio_list, delta_ground_x, delta_ground_y, rescaled_src_ground_x, body_flag, id, scale_min)
@@ -641,22 +641,22 @@ def retarget_pose(src_skeleton, dst_skeleton, all_src_skeleton, src_skeleton_edi
 
         dst_skeleton_edit['height'] = int(dst_skeleton_edit['height'] * scale_min_edit)
         dst_skeleton_edit['width'] = int(dst_skeleton_edit['width'] * scale_min_edit)
-        for idx in range(len(dst_skeleton_edit['keypoints_left_hand'])):
-            dst_skeleton_edit['keypoints_left_hand'][idx][0] *= scale_min_edit
-            dst_skeleton_edit['keypoints_left_hand'][idx][1] *= scale_min_edit
-        for idx in range(len(dst_skeleton_edit['keypoints_right_hand'])):
-            dst_skeleton_edit['keypoints_right_hand'][idx][0] *= scale_min_edit
-            dst_skeleton_edit['keypoints_right_hand'][idx][1] *= scale_min_edit
+        for hp in dst_skeleton_edit['keypoints_left_hand']:
+            hp[0] *= scale_min_edit
+            hp[1] *= scale_min_edit
+        for hp in dst_skeleton_edit['keypoints_right_hand']:
+            hp[0] *= scale_min_edit
+            hp[1] *= scale_min_edit
     
 
     dst_skeleton['height'] = int(dst_skeleton['height'] * scale_min)
     dst_skeleton['width'] = int(dst_skeleton['width'] * scale_min)
-    for idx in range(len(dst_skeleton['keypoints_left_hand'])):
-        dst_skeleton['keypoints_left_hand'][idx][0] *= scale_min
-        dst_skeleton['keypoints_left_hand'][idx][1] *= scale_min
-    for idx in range(len(dst_skeleton['keypoints_right_hand'])):
-        dst_skeleton['keypoints_right_hand'][idx][0] *= scale_min
-        dst_skeleton['keypoints_right_hand'][idx][1] *= scale_min
+    for hp in dst_skeleton['keypoints_left_hand']:
+        hp[0] *= scale_min
+        hp[1] *= scale_min
+    for hp in dst_skeleton['keypoints_right_hand']:
+        hp[0] *= scale_min
+        hp[1] *= scale_min
 
 
     dst_body_flag = check_full_body(dst_skeleton['keypoints_body'], threshold)
@@ -672,8 +672,8 @@ def retarget_pose(src_skeleton, dst_skeleton, all_src_skeleton, src_skeleton_edi
         dst_skeleton = fix_lack_keypoints_use_sym(dst_skeleton)
 
     none_idx = []
-    for idx in range(len(dst_skeleton['keypoints_body'])):
-        if dst_skeleton['keypoints_body'][idx] == None or src_skeleton['keypoints_body'][idx] == None:
+    for idx, kp in enumerate(dst_skeleton['keypoints_body']):
+        if kp == None or src_skeleton['keypoints_body'][idx] == None:
             src_skeleton['keypoints_body'][idx] = None
             dst_skeleton['keypoints_body'][idx] = None
             none_idx.append(idx)

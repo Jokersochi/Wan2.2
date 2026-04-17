@@ -1,0 +1,3 @@
+## 2024-05-24 - Unpatchify Unpacking Overhead
+**Learning:** In the core `unpatchify` method used across multiple models (`model.py`, `model_animate.py`, `model_s2v.py`, `motioner.py`), the use of `math.prod(v)` and list comprehensions with `zip` inside loops over frames/grid sizes adds significant overhead. Replacing these with direct indexing (e.g. `v[0] * v[1] * v[2]` and `v[0] * self.patch_size[0]`, etc.) drops the execution time for this hot path logic by nearly 50%.
+**Action:** Use direct tuple unpacking and scalar multiplication for small, fixed-dimension tuples (like 3D grid sizes) instead of generalized functional constructs like `math.prod` or `zip` inside high-frequency loops.

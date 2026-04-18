@@ -621,10 +621,13 @@ class MotionerTransformers(nn.Module, PeftAdapterMixin):
     def unpatchify(self, x, grid_sizes):
         c = self.out_dim
         out = []
+        p0, p1, p2 = self.patch_size
         for u, v in zip(x, grid_sizes.tolist()):
-            u = u[:math.prod(v)].view(*v, *self.patch_size, c)
+            # Direct tuple unpacking and scalar multiplication for lower overhead
+            v0, v1, v2 = v
+            u = u[:v0 * v1 * v2].view(*v, *self.patch_size, c)
             u = torch.einsum('fhwpqrc->cfphqwr', u)
-            u = u.reshape(c, *[i * j for i, j in zip(v, self.patch_size)])
+            u = u.reshape(c, v0 * p0, v1 * p1, v2 * p2)
             out.append(u)
         return out
 

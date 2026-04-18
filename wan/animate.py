@@ -600,7 +600,7 @@ class WanAnimate:
                         "face_pixel_values": face_pixel_values_uncond,
                     }
 
-                for i, t in enumerate(tqdm(timesteps)):
+                for i, t in enumerate(tqdm(timesteps, desc="Generating video")):
                     latent_model_input = latents
                     timestep = [t]
 

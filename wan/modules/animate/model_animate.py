@@ -469,9 +469,9 @@ class WanAnimateModel(ModelMixin, ConfigMixin, PeftAdapterMixin):
         c = self.out_dim
         out = []
         for u, v in zip(x, grid_sizes.tolist()):
-            u = u[:math.prod(v)].view(*v, *self.patch_size, c)
+            u = u[:v[0] * v[1] * v[2]].view(*v, *self.patch_size, c)
             u = torch.einsum('fhwpqrc->cfphqwr', u)
-            u = u.reshape(c, *[i * j for i, j in zip(v, self.patch_size)])
+            u = u.reshape(c, v[0] * self.patch_size[0], v[1] * self.patch_size[1], v[2] * self.patch_size[2])
             out.append(u)
         return out
 

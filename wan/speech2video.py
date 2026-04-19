@@ -614,7 +614,7 @@ class WanS2V:
                     self.noise_model.to(self.device)
                     torch.cuda.empty_cache()
 
-                for i, t in enumerate(tqdm(timesteps)):
+                for i, t in enumerate(tqdm(timesteps, desc="Generating video")):
                     latent_model_input = latents[0:1]
                     timestep = [t]
 

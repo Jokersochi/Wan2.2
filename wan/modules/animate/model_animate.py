@@ -399,7 +399,7 @@ class WanAnimateModel(ModelMixin, ConfigMixin, PeftAdapterMixin):
         assert seq_lens.max() <= seq_len
         x = torch.cat([
             torch.cat([u, u.new_zeros(1, seq_len - u.size(1), u.size(2))],
-                      dim=1) for u in x
+                      dim=1) if seq_len > u.size(1) else u for u in x
         ])
 
         # time embeddings
@@ -415,7 +415,7 @@ class WanAnimateModel(ModelMixin, ConfigMixin, PeftAdapterMixin):
         context = self.text_embedding(
             torch.stack([
                 torch.cat(
-                    [u, u.new_zeros(self.text_len - u.size(0), u.size(1))])
+                    [u, u.new_zeros(self.text_len - u.size(0), u.size(1))]) if self.text_len > u.size(0) else u
                 for u in context
             ]))
 

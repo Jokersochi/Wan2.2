@@ -59,7 +59,9 @@ def rope_apply(x, grid_sizes, freqs):
 
         # apply rotary embedding
         x_i = torch.view_as_real(x_i * freqs_i).flatten(2)
-        x_i = torch.cat([x_i, x[i, seq_len:]])
+        # Optimization: Skip concatenation if sequence is full to avoid redundant memory allocation
+        if seq_len < x.size(1):
+            x_i = torch.cat([x_i, x[i, seq_len:]])
 
         # append to collection
         output.append(x_i)

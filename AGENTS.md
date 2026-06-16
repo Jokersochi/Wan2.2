@@ -6,7 +6,7 @@ Wan2.2 is a Python-based AI video generation inference pipeline (no web server, 
 
 ### CUDA requirement
 
-The `wan` package cannot be imported without CUDA — `wan/modules/t5.py` calls `torch.cuda.current_device()` at class definition time. This means `import wan`, `generate.py`, and any test importing `wan` will fail on CPU-only environments. Development tool commands (lint, format, compile checks) work without GPU.
+The `wan` package cannot be imported without CUDA — `wan/modules/t5.py` calls `torch.cuda.current_device()` at class definition time. On CPU-only environments, monkey-patch before importing: `import torch; torch.cuda.current_device = lambda: 0`. Development tool commands (lint, format, compile checks) work without GPU regardless.
 
 ### Development tools
 
@@ -22,4 +22,4 @@ Requires NVIDIA GPU(s) with sufficient VRAM (24GB+ for 5B model, 80GB+ for 14B m
 
 ### Dependencies
 
-Core deps in `requirements.txt`. Dev tools in `pyproject.toml` under `[project.optional-dependencies] dev`. The `flash_attn` package requires CUDA to install. Install order: PyTorch first (CPU or CUDA version as needed), then remaining deps, then `flash_attn` last.
+Core deps in `requirements.txt`. Optional extras in `requirements_s2v.txt` and `requirements_animate.txt`. Dev tools in `pyproject.toml` under `[project.optional-dependencies] dev`. The `flash_attn` package requires CUDA hardware to build/install. The `pyworld` package (in `requirements_s2v.txt`) needs C++ build tools and may fail; it is only needed for CosyVoice TTS in S2V. Install order: PyTorch first, then remaining deps, then `flash_attn` last.

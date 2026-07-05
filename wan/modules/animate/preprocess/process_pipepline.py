@@ -3,6 +3,7 @@ import os
 import numpy as np
 import shutil
 import torch
+from tqdm import tqdm
 from diffusers import FluxKontextPipeline
 import cv2
 from loguru import logger
@@ -329,7 +330,7 @@ class ProcessPipeline():
                 )
 
             video_segments = {}
-            for out_frame_idx, out_obj_ids, out_mask_logits in self.predictor.propagate_in_video(inference_state):
+            for out_frame_idx, out_obj_ids, out_mask_logits in tqdm(self.predictor.propagate_in_video(inference_state), desc="Propagating mask through video frames"):
                 video_segments[out_frame_idx] = {
                     out_obj_id: (out_mask_logits[i] > 0.0).cpu().numpy()
                     for i, out_obj_id in enumerate(out_obj_ids)

@@ -10,6 +10,7 @@ import subprocess
 import imageio
 import torch
 import torchvision
+from tqdm import tqdm
 
 __all__ = ['save_video', 'save_image', 'str2bool']
 
@@ -113,7 +114,7 @@ def save_video(tensor,
         # write video
         writer = imageio.get_writer(
             cache_file, fps=fps, codec='libx264', quality=8)
-        for frame in tensor.numpy():
+        for frame in tqdm(tensor.numpy(), desc="Saving video frames"):
             writer.append_data(frame)
         writer.close()
     except Exception as e:

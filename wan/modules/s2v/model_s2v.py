@@ -874,10 +874,11 @@ class WanModel_S2V(ModelMixin, ConfigMixin):
 
         c = self.out_dim
         out = []
-        for u, v in zip(x, grid_sizes.tolist()):
-            u = u[:v[0] * v[1] * v[2]].view(*v, *self.patch_size, c)
+        p_f, p_h, p_w = self.patch_size
+        for u, (f, h, w) in zip(x, grid_sizes.tolist()):
+            u = u[:f * h * w].view(f, h, w, p_f, p_h, p_w, c)
             u = torch.einsum('fhwpqrc->cfphqwr', u)
-            u = u.reshape(c, v[0] * self.patch_size[0], v[1] * self.patch_size[1], v[2] * self.patch_size[2])
+            u = u.reshape(c, f * p_f, h * p_h, w * p_w)
             out.append(u)
         return out
 

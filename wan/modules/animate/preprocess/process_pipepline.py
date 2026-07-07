@@ -12,6 +12,7 @@ try:
 except:
     import moviepy as mpy
 
+from tqdm import tqdm
 from decord import VideoReader
 from pose2d import Pose2d
 from pose2d_utils import AAPoseMeta
@@ -329,7 +330,7 @@ class ProcessPipeline():
                 )
 
             video_segments = {}
-            for out_frame_idx, out_obj_ids, out_mask_logits in self.predictor.propagate_in_video(inference_state):
+            for out_frame_idx, out_obj_ids, out_mask_logits in tqdm(self.predictor.propagate_in_video(inference_state), desc="Propagating mask in video"):
                 video_segments[out_frame_idx] = {
                     out_obj_id: (out_mask_logits[i] > 0.0).cpu().numpy()
                     for i, out_obj_id in enumerate(out_obj_ids)

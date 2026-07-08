@@ -3,6 +3,7 @@ import os
 import numpy as np
 import shutil
 import torch
+from tqdm import tqdm
 from diffusers import FluxKontextPipeline
 import cv2
 from loguru import logger
@@ -285,7 +286,7 @@ class ProcessPipeline():
             num_step = (frame_num + th_step) // th_step
 
         all_mask = []
-        for index in range(num_step):
+        for index in tqdm(range(num_step), desc="Processing video chunks"):
             each_frames = frames[index * th_step:(index + 1) * th_step]
     
             kp2ds = kp2ds_all[index * th_step:(index + 1) * th_step]

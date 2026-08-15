@@ -516,7 +516,7 @@ class WanModel(ModelMixin, ConfigMixin):
         out = []
         for u, v in zip(x, grid_sizes.tolist()):
             u = u[:v[0] * v[1] * v[2]].view(*v, *self.patch_size, c)
-            u = torch.einsum('fhwpqrc->cfphqwr', u)
+            u = u.permute(6, 0, 3, 1, 4, 2, 5)
             u = u.reshape(c, v[0] * self.patch_size[0], v[1] * self.patch_size[1], v[2] * self.patch_size[2])
             out.append(u)
         return out

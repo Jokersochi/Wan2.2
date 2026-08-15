@@ -92,7 +92,8 @@ def fetch_image(ele: dict[str, str | Image.Image],
     if isinstance(image, Image.Image):
         image_obj = image
     elif image.startswith("http://") or image.startswith("https://"):
-        image_obj = Image.open(requests.get(image, stream=True).raw)
+        # Add a timeout to prevent hanging on unresponsive servers
+        image_obj = Image.open(requests.get(image, stream=True, timeout=10).raw)
     elif image.startswith("file://"):
         image_obj = Image.open(image[7:])
     elif image.startswith("data:image"):

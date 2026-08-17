@@ -173,7 +173,8 @@ class DashScopePromptExpander(PromptExpander):
                     seed=seed,
                     result_format='message',  # set the result to be "message" format.
                 )
-                assert response.status_code == HTTPStatus.OK, response
+                if response.status_code != HTTPStatus.OK:
+                    raise RuntimeError(f"DashScope API error: {response}")
                 expanded_prompt = response['output']['choices'][0]['message'][
                     'content']
                 return PromptOutput(
@@ -240,7 +241,8 @@ class DashScopePromptExpander(PromptExpander):
                     seed=seed,
                     result_format='message',  # set the result to be "message" format.
                 )
-                assert response.status_code == HTTPStatus.OK, response
+                if response.status_code != HTTPStatus.OK:
+                    raise RuntimeError(f"DashScope API error: {response}")
                 result_prompt = response['output']['choices'][0]['message'][
                     'content'][0]['text'].replace('\n', '\\n')
                 status = True

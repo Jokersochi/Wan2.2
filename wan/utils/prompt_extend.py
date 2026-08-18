@@ -82,7 +82,8 @@ class PromptExpander:
         pass
 
     def decide_system_prompt(self, tar_lang="zh", prompt=None):
-        assert self.task is not None
+        if self.task is None:
+            raise ValueError("Task cannot be None")
         if "ti2v" in self.task:
             if self.is_vl:
                 return DEFAULT_SYS_PROMPTS[self.task]["i2v"][tar_lang]
@@ -173,7 +174,8 @@ class DashScopePromptExpander(PromptExpander):
                     seed=seed,
                     result_format='message',  # set the result to be "message" format.
                 )
-                assert response.status_code == HTTPStatus.OK, response
+                if response.status_code != HTTPStatus.OK:
+                    raise RuntimeError(f"DashScope API failed: {response}")
                 expanded_prompt = response['output']['choices'][0]['message'][
                     'content']
                 return PromptOutput(
@@ -240,7 +242,8 @@ class DashScopePromptExpander(PromptExpander):
                     seed=seed,
                     result_format='message',  # set the result to be "message" format.
                 )
-                assert response.status_code == HTTPStatus.OK, response
+                if response.status_code != HTTPStatus.OK:
+                    raise RuntimeError(f"DashScope API failed: {response}")
                 result_prompt = response['output']['choices'][0]['message'][
                     'content'][0]['text'].replace('\n', '\\n')
                 status = True

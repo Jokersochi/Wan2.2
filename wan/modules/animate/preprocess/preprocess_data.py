@@ -88,16 +88,18 @@ def _parse_args():
     )
     args = parser.parse_args()
 
-    return args
+    return parser, args
 
 
 if __name__ == '__main__':
-    args = _parse_args()
+    parser, args = _parse_args()
     args_dict = vars(args)
     print(args_dict)
 
-    assert len(args.resolution_area) == 2, "resolution_area should be a list of two integers [width, height]"
-    assert not args.use_flux or args.retarget_flag, "Image editing with FLUX can only be used when pose retargeting is enabled."
+    if len(args.resolution_area) != 2:
+        parser.error("resolution_area should be a list of two integers [width, height]")
+    if args.use_flux and not args.retarget_flag:
+        parser.error("Image editing with FLUX can only be used when pose retargeting is enabled.")
 
     pose2d_checkpoint_path = os.path.join(args.ckpt_path, 'pose2d/vitpose_h_wholebody.onnx')
     det_checkpoint_path = os.path.join(args.ckpt_path, 'det/yolov10m.onnx')

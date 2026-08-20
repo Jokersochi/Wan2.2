@@ -1,3 +1,3 @@
-## 2024-04-19 - unpatchify loop overhead
-**Learning:** In Python/PyTorch high-frequency code paths like the 'unpatchify' loop, replacing generalized functional constructs like `math.prod` and list comprehensions with `zip` with direct tuple unpacking and scalar multiplication (e.g., `v[0] * v[1] * v[2]`) reduces execution overhead significantly.
-**Action:** Replace `math.prod(v)` and `[i * j for i, j in zip(v, self.patch_size)]` with explicit unpacks like `v[0] * v[1] * v[2]` and direct multiplication elements `v[0] * self.patch_size[0]`, etc.
+## 2024-08-20 - PyTorch Native Functions for Mathematical Activations
+**Learning:** Manual implementations of mathematical activation functions (like GELU using `torch.pow` and `torch.tanh`) in Python incur significant memory overhead and execution time due to intermediate tensor allocations and multiple un-fused operations. PyTorch native equivalents (like `F.gelu`) use fused C++/CUDA kernels, offering substantial performance gains.
+**Action:** Always scan for manual implementations of standard mathematical operations and replace them with their `torch.nn.functional` equivalents for free memory and speed optimizations.

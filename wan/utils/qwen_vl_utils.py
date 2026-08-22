@@ -154,8 +154,8 @@ def smart_nframes(
     Returns:
         int: the number of frames for video used for model inputs.
     """
-    assert not ("fps" in ele and
-                "nframes" in ele), "Only accept either `fps` or `nframes`"
+    if "fps" in ele and "nframes" in ele:
+        raise ValueError("Only accept either `fps` or `nframes`")
     if "nframes" in ele:
         nframes = round_by_factor(ele["nframes"], FRAME_FACTOR)
     else:
@@ -308,7 +308,8 @@ def fetch_video(
         ).float()
         return video
     else:
-        assert isinstance(ele["video"], (list, tuple))
+        if not isinstance(ele["video"], (list, tuple)):
+            raise ValueError("video must be a list or tuple")
         process_info = ele.copy()
         process_info.pop("type", None)
         process_info.pop("video", None)

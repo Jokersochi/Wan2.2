@@ -46,8 +46,12 @@ def init_weights(m):
 class GELU(nn.Module):
 
     def forward(self, x):
-        return 0.5 * x * (1.0 + torch.tanh(
-            math.sqrt(2.0 / math.pi) * (x + 0.044715 * torch.pow(x, 3.0))))
+        # ⚡ Bolt Optimization:
+        # Replaced manual calculation with PyTorch native F.gelu.
+        # This uses a fused C++ kernel which is significantly faster and uses less memory
+        # as it avoids allocating multiple intermediate tensors (pow, add, mul, tanh).
+        # Expected impact: Faster forward/backward passes and reduced VRAM footprint.
+        return F.gelu(x, approximate="tanh")
 
 
 class T5LayerNorm(nn.Module):

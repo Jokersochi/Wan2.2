@@ -59,11 +59,14 @@ EXAMPLE_PROMPT = {
 }
 
 
-def _validate_args(args):
+def _validate_args(args, parser):
     # Basic check
-    assert args.ckpt_dir is not None, "Please specify the checkpoint directory."
-    assert args.task in WAN_CONFIGS, f"Unsupport task: {args.task}"
-    assert args.task in EXAMPLE_PROMPT, f"Unsupport task: {args.task}"
+    if args.ckpt_dir is None:
+        parser.error("Please specify the checkpoint directory.")
+    if args.task not in WAN_CONFIGS:
+        parser.error(f"Unsupport task: {args.task}")
+    if args.task not in EXAMPLE_PROMPT:
+        parser.error(f"Unsupport task: {args.task}")
 
     if args.prompt is None:
         args.prompt = EXAMPLE_PROMPT[args.task]["prompt"]
@@ -77,7 +80,8 @@ def _validate_args(args):
         args.tts_text = EXAMPLE_PROMPT[args.task]["tts_text"]
 
     if args.task == "i2v-A14B":
-        assert args.image is not None, "Please specify the image path for i2v."
+        if args.image is None:
+            parser.error("Please specify the image path for i2v.")
 
     cfg = WAN_CONFIGS[args.task]
 
@@ -97,9 +101,8 @@ def _validate_args(args):
         0, sys.maxsize)
     # Size check
     if not 's2v' in args.task:
-        assert args.size in SUPPORTED_SIZES[
-            args.
-            task], f"Unsupport size {args.size} for task {args.task}, supported sizes are: {', '.join(SUPPORTED_SIZES[args.task])}"
+        if args.size not in SUPPORTED_SIZES[args.task]:
+            parser.error(f"Unsupport size {args.size} for task {args.task}, supported sizes are: {', '.join(SUPPORTED_SIZES[args.task])}")
 
 
 def _parse_args():
@@ -295,9 +298,9 @@ def _parse_args():
         help="Number of frames per clip, 48 or 80 or others (must be multiple of 4) for 14B s2v"
     )
     args = parser.parse_args()
-    _validate_args(args)
+    _validate_args(args, parser)
 
-    return args
+    return args, parser
 
 
 def _init_logging(rank):
@@ -312,7 +315,7 @@ def _init_logging(rank):
         logging.basicConfig(level=logging.ERROR)
 
 
-def generate(args):
+def generate(args, parser=None):
     rank = int(os.getenv("RANK", 0))
     world_size = int(os.getenv("WORLD_SIZE", 1))
     local_rank = int(os.getenv("LOCAL_RANK", 0))
@@ -331,15 +334,17 @@ def generate(args):
             rank=rank,
             world_size=world_size)
     else:
-        assert not (
-            args.t5_fsdp or args.dit_fsdp
-        ), f"t5_fsdp and dit_fsdp are not supported in non-distributed environments."
-        assert not (
-            args.ulysses_size > 1
-        ), f"sequence parallel are not supported in non-distributed environments."
+        if args.t5_fsdp or args.dit_fsdp:
+            if parser: parser.error("t5_fsdp and dit_fsdp are not supported in non-distributed environments.")
+            else: raise ValueError("t5_fsdp and dit_fsdp are not supported in non-distributed environments.")
+        if args.ulysses_size > 1:
+            if parser: parser.error("sequence parallel are not supported in non-distributed environments.")
+            else: raise ValueError("sequence parallel are not supported in non-distributed environments.")
 
     if args.ulysses_size > 1:
-        assert args.ulysses_size == world_size, f"The number of ulysses_size should be equal to the world size."
+        if args.ulysses_size != world_size:
+            if parser: parser.error("The number of ulysses_size should be equal to the world size.")
+            else: raise ValueError("The number of ulysses_size should be equal to the world size.")
         init_distributed_group()
 
     if args.use_prompt_extend:
@@ -360,7 +365,9 @@ def generate(args):
 
     cfg = WAN_CONFIGS[args.task]
     if args.ulysses_size > 1:
-        assert cfg.num_heads % args.ulysses_size == 0, f"`{cfg.num_heads=}` cannot be divided evenly by `{args.ulysses_size=}`."
+        if cfg.num_heads % args.ulysses_size != 0:
+            if parser: parser.error(f"`{cfg.num_heads=}` cannot be divided evenly by `{args.ulysses_size=}`.")
+            else: raise ValueError(f"`{cfg.num_heads=}` cannot be divided evenly by `{args.ulysses_size=}`.")
 
     logging.info(f"Generation job args: {args}")
     logging.info(f"Generation model config: {cfg}")
@@ -571,5 +578,5 @@ def generate(args):
 
 
 if __name__ == "__main__":
-    args = _parse_args()
-    generate(args)
+    args, parser = _parse_args()
+    generate(args, parser)

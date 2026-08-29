@@ -1,3 +1,6 @@
 ## 2024-05-18 - Improve CLI UX with tqdm descriptions
 **Learning:** For Python CLI applications, 'Palette' UX improvements include adding context-rich descriptions (e.g., `desc=...`) to `tqdm` progress bars for long-running processes. The memory context mentions this explicitly.
 **Action:** Always add `desc="Process description"` to `tqdm()` calls for improved command-line user experience, allowing users to know what process is running.
+## 2024-05-18 - Replacing assert with parser.error for CLI validation
+**Learning:** Python `assert` statements provide poor UX for CLI tools and raise stack traces. Additionally, they are removed in optimized execution.
+**Action:** Replace `assert` statements in `argparse` validation logic with `parser.error()` for clean, user-friendly error messages, and use explicit exceptions like `ValueError` for runtime validation.

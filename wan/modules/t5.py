@@ -98,20 +98,34 @@ class T5Attention(nn.Module):
         k = self.k(context).view(b, -1, n, c)
         v = self.v(context).view(b, -1, n, c)
 
-        # attention bias
-        attn_bias = x.new_zeros(b, n, q.size(1), k.size(1))
-        if pos_bias is not None:
-            attn_bias += pos_bias
-        if mask is not None:
-            assert mask.ndim in [2, 3]
-            mask = mask.view(b, 1, 1,
-                             -1) if mask.ndim == 2 else mask.unsqueeze(1)
-            attn_bias.masked_fill_(mask == 0, torch.finfo(x.dtype).min)
+        # PyTorch SDPA prefers [B, N, L, C] format
+        q = q.transpose(1, 2)
+        k = k.transpose(1, 2)
+        v = v.transpose(1, 2)
 
-        # compute attention (T5 does not use scaling)
-        attn = torch.einsum('binc,bjnc->bnij', q, k) + attn_bias
-        attn = F.softmax(attn.float(), dim=-1).type_as(attn)
-        x = torch.einsum('bnij,bjnc->binc', attn, v)
+        # attention bias
+        attn_bias = None
+        if pos_bias is not None or mask is not None:
+            attn_bias = x.new_zeros(b, n, q.size(2), k.size(2))
+            if pos_bias is not None:
+                attn_bias += pos_bias
+            if mask is not None:
+                assert mask.ndim in [2, 3]
+                mask = mask.view(b, 1, 1,
+                                 -1) if mask.ndim == 2 else mask.unsqueeze(1)
+                attn_bias.masked_fill_(mask == 0, torch.finfo(x.dtype).min)
+
+        # compute attention using SDPA (T5 does not use scaling, scale=1.0)
+        # dropout is applied to the output projection, not here
+        x = F.scaled_dot_product_attention(
+            q, k, v,
+            attn_mask=attn_bias,
+            dropout_p=0.0,
+            scale=1.0
+        )
+
+        # Format back to [B, L, N, C]
+        x = x.transpose(1, 2).contiguous()
 
         # output
         x = x.reshape(b, -1, n * c)

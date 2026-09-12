@@ -59,11 +59,18 @@ EXAMPLE_PROMPT = {
 }
 
 
-def _validate_args(args):
+def _validate_args(args, parser=None):
+    def check(condition, error_msg):
+        if not condition:
+            if parser:
+                parser.error(error_msg)
+            else:
+                raise ValueError(error_msg)
+
     # Basic check
-    assert args.ckpt_dir is not None, "Please specify the checkpoint directory."
-    assert args.task in WAN_CONFIGS, f"Unsupport task: {args.task}"
-    assert args.task in EXAMPLE_PROMPT, f"Unsupport task: {args.task}"
+    check(args.ckpt_dir is not None, "Please specify the checkpoint directory.")
+    check(args.task in WAN_CONFIGS, f"Unsupport task: {args.task}")
+    check(args.task in EXAMPLE_PROMPT, f"Unsupport task: {args.task}")
 
     if args.prompt is None:
         args.prompt = EXAMPLE_PROMPT[args.task]["prompt"]
@@ -77,7 +84,7 @@ def _validate_args(args):
         args.tts_text = EXAMPLE_PROMPT[args.task]["tts_text"]
 
     if args.task == "i2v-A14B":
-        assert args.image is not None, "Please specify the image path for i2v."
+        check(args.image is not None, "Please specify the image path for i2v.")
 
     cfg = WAN_CONFIGS[args.task]
 
@@ -97,9 +104,7 @@ def _validate_args(args):
         0, sys.maxsize)
     # Size check
     if not 's2v' in args.task:
-        assert args.size in SUPPORTED_SIZES[
-            args.
-            task], f"Unsupport size {args.size} for task {args.task}, supported sizes are: {', '.join(SUPPORTED_SIZES[args.task])}"
+        check(args.size in SUPPORTED_SIZES[args.task], f"Unsupport size {args.size} for task {args.task}, supported sizes are: {', '.join(SUPPORTED_SIZES[args.task])}")
 
 
 def _parse_args():
@@ -295,7 +300,7 @@ def _parse_args():
         help="Number of frames per clip, 48 or 80 or others (must be multiple of 4) for 14B s2v"
     )
     args = parser.parse_args()
-    _validate_args(args)
+    _validate_args(args, parser)
 
     return args
 

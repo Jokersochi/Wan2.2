@@ -4,4 +4,5 @@ __pycache__/
 tmp_examples*
 new_checkpoint*
 batch_test*
-nohup*
+nohup*venv/
+venv

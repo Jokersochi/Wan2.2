@@ -109,9 +109,12 @@ class T5Attention(nn.Module):
             attn_bias.masked_fill_(mask == 0, torch.finfo(x.dtype).min)
 
         # compute attention (T5 does not use scaling)
-        attn = torch.einsum('binc,bjnc->bnij', q, k) + attn_bias
-        attn = F.softmax(attn.float(), dim=-1).type_as(attn)
-        x = torch.einsum('bnij,bjnc->binc', attn, v)
+        # q, k, v are [B, L, H, D] -> [B, H, L, D]
+        q = q.permute(0, 2, 1, 3)
+        k = k.permute(0, 2, 1, 3)
+        v = v.permute(0, 2, 1, 3)
+        x = F.scaled_dot_product_attention(q, k, v, attn_mask=attn_bias, scale=1.0)
+        x = x.permute(0, 2, 1, 3) # [B, L, H, D]
 
         # output
         x = x.reshape(b, -1, n * c)

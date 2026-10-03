@@ -478,11 +478,11 @@ class MotionerTransformers(nn.Module, PeftAdapterMixin):
             x[..., ::2] = 1
 
             gride_sizes = [[
-                torch.tensor([0, 0, 0]).unsqueeze(0).repeat(1, 1),
+                torch.tensor([0, 0, 0]).unsqueeze(0).expand(1, -1),
                 torch.tensor([1, self.motion_side_len,
-                              self.motion_side_len]).unsqueeze(0).repeat(1, 1),
+                              self.motion_side_len]).unsqueeze(0).expand(1, -1),
                 torch.tensor([1, self.motion_side_len,
-                              self.motion_side_len]).unsqueeze(0).repeat(1, 1),
+                              self.motion_side_len]).unsqueeze(0).expand(1, -1),
             ]]
             token_freqs = rope_apply(x, gride_sizes, self.freqs)
             token_freqs = token_freqs[0, :, 0].reshape(motion_token_num, -1, 2)
@@ -546,11 +546,11 @@ class MotionerTransformers(nn.Module, PeftAdapterMixin):
             for idx in sample_idx[0][::-1][::self.sample_c]:
                 tsm_frame_grid_sizes = [[
                     torch.tensor([idx, 0,
-                                  0]).unsqueeze(0).repeat(batch_size, 1),
+                                  0]).unsqueeze(0).expand(batch_size, -1),
                     torch.tensor([idx + 1, seq_h,
-                                  seq_w]).unsqueeze(0).repeat(batch_size, 1),
+                                  seq_w]).unsqueeze(0).expand(batch_size, -1),
                     torch.tensor([1, seq_h,
-                                  seq_w]).unsqueeze(0).repeat(batch_size, 1),
+                                  seq_w]).unsqueeze(0).expand(batch_size, -1),
                 ]]
                 grid_sizes += tsm_frame_grid_sizes
             seq_f = sample_idx[0][-1] + 1
@@ -562,13 +562,13 @@ class MotionerTransformers(nn.Module, PeftAdapterMixin):
         batch_size = len(x)
 
         token_grid_sizes = [[
-            torch.tensor([seq_f, 0, 0]).unsqueeze(0).repeat(batch_size, 1),
+            torch.tensor([seq_f, 0, 0]).unsqueeze(0).expand(batch_size, -1),
             torch.tensor(
                 [seq_f + 1, self.motion_side_len,
-                 self.motion_side_len]).unsqueeze(0).repeat(batch_size, 1),
+                 self.motion_side_len]).unsqueeze(0).expand(batch_size, -1),
             torch.tensor(
                 [1 if not self.trainable_token_pos_emb else -1, seq_h,
-                 seq_w]).unsqueeze(0).repeat(batch_size, 1),
+                 seq_w]).unsqueeze(0).expand(batch_size, -1),
         ]  # 第三行代表rope emb的想要覆盖到的范围
                            ]
 
@@ -723,29 +723,29 @@ class FramePackMotioner(nn.Module):
             end_time_id = start_time_id + self.zip_frame_buckets[0]
             grid_sizes = [] if add_last_motion < 2 and self.drop_mode == "drop" else \
                         [
-                            [torch.tensor([start_time_id, 0, 0]).unsqueeze(0).repeat(1, 1),
-                            torch.tensor([end_time_id, lat_height // 2, lat_width // 2]).unsqueeze(0).repeat(1, 1),
-                            torch.tensor([self.zip_frame_buckets[0], lat_height // 2, lat_width // 2]).unsqueeze(0).repeat(1, 1), ]
+                            [torch.tensor([start_time_id, 0, 0]).unsqueeze(0).expand(1, -1),
+                            torch.tensor([end_time_id, lat_height // 2, lat_width // 2]).unsqueeze(0).expand(1, -1),
+                            torch.tensor([self.zip_frame_buckets[0], lat_height // 2, lat_width // 2]).unsqueeze(0).expand(1, -1), ]
                         ]
 
             start_time_id = -(self.zip_frame_buckets[:2].sum())
             end_time_id = start_time_id + self.zip_frame_buckets[1] // 2
             grid_sizes_2x = [] if add_last_motion < 1 and self.drop_mode == "drop" else \
             [
-                [torch.tensor([start_time_id, 0, 0]).unsqueeze(0).repeat(1, 1),
-                torch.tensor([end_time_id, lat_height // 4, lat_width // 4]).unsqueeze(0).repeat(1, 1),
-                torch.tensor([self.zip_frame_buckets[1], lat_height // 2, lat_width // 2]).unsqueeze(0).repeat(1, 1), ]
+                [torch.tensor([start_time_id, 0, 0]).unsqueeze(0).expand(1, -1),
+                torch.tensor([end_time_id, lat_height // 4, lat_width // 4]).unsqueeze(0).expand(1, -1),
+                torch.tensor([self.zip_frame_buckets[1], lat_height // 2, lat_width // 2]).unsqueeze(0).expand(1, -1), ]
             ]
 
             start_time_id = -(self.zip_frame_buckets[:3].sum())
             end_time_id = start_time_id + self.zip_frame_buckets[2] // 4
             grid_sizes_4x = [[
-                torch.tensor([start_time_id, 0, 0]).unsqueeze(0).repeat(1, 1),
+                torch.tensor([start_time_id, 0, 0]).unsqueeze(0).expand(1, -1),
                 torch.tensor([end_time_id, lat_height // 8,
-                              lat_width // 8]).unsqueeze(0).repeat(1, 1),
+                              lat_width // 8]).unsqueeze(0).expand(1, -1),
                 torch.tensor([
                     self.zip_frame_buckets[2], lat_height // 2, lat_width // 2
-                ]).unsqueeze(0).repeat(1, 1),
+                ]).unsqueeze(0).expand(1, -1),
             ]]
 
             grid_sizes = grid_sizes + grid_sizes_2x + grid_sizes_4x

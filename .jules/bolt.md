@@ -1,3 +1,6 @@
 ## 2024-04-19 - unpatchify loop overhead
 **Learning:** In Python/PyTorch high-frequency code paths like the 'unpatchify' loop, replacing generalized functional constructs like `math.prod` and list comprehensions with `zip` with direct tuple unpacking and scalar multiplication (e.g., `v[0] * v[1] * v[2]`) reduces execution overhead significantly.
 **Action:** Replace `math.prod(v)` and `[i * j for i, j in zip(v, self.patch_size)]` with explicit unpacks like `v[0] * v[1] * v[2]` and direct multiplication elements `v[0] * self.patch_size[0]`, etc.
+## 2024-05-19 - avoid list duplication when creating identical tensors
+**Learning:** In PyTorch, using `torch.tensor([val] * size).unsqueeze(0).repeat(batch_size, 1)` or similar constructs that duplicate data across batches by first materializing a list is extremely inefficient. Using `torch.tensor([[val]]).expand(batch_size, -1)` avoids the memory allocation and copying associated with `.repeat()` and avoids the Python list overhead entirely by creating a broadcasted view.
+**Action:** Replace `torch.tensor([val1, val2]).unsqueeze(0).repeat(batch_size, 1)` with `torch.tensor([[val1, val2]]).expand(batch_size, -1)` to reduce CPU tensor allocation and memory footprint.

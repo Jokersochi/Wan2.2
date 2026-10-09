@@ -6,7 +6,8 @@ from process_pipepline import ProcessPipeline
 
 def _parse_args():
     parser = argparse.ArgumentParser(
-        description="The preprocessing pipeline for Wan-animate."
+        description="The preprocessing pipeline for Wan-animate.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
 
     parser.add_argument(

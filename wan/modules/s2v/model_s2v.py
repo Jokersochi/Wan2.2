@@ -414,15 +414,15 @@ class WanModel_S2V(ModelMixin, ConfigMixin):
                 x[..., ::2] = 1
 
                 gride_sizes = [[
-                    torch.tensor([0, 0, 0]).unsqueeze(0).repeat(1, 1),
+                    torch.tensor([0, 0, 0]).unsqueeze(0).expand(1, -1),
                     torch.tensor([
                         1, self.motioner.motion_side_len,
                         self.motioner.motion_side_len
-                    ]).unsqueeze(0).repeat(1, 1),
+                    ]).unsqueeze(0).expand(1, -1),
                     torch.tensor([
                         1, self.motioner.motion_side_len,
                         self.motioner.motion_side_len
-                    ]).unsqueeze(0).repeat(1, 1),
+                    ]).unsqueeze(0).expand(1, -1),
                 ]]
                 token_freqs = rope_apply(x, gride_sizes, self.freqs)
                 token_freqs = token_freqs[0, :,
@@ -466,10 +466,10 @@ class WanModel_S2V(ModelMixin, ConfigMixin):
             flat_mot = mot[bs].flatten(2).transpose(1, 2).contiguous()
             motion_grid_sizes = [[
                 torch.tensor([-self.lat_motion_frames, 0,
-                              0]).unsqueeze(0).repeat(1, 1),
-                torch.tensor([0, height, width]).unsqueeze(0).repeat(1, 1),
+                              0]).unsqueeze(0).expand(1, -1),
+                torch.tensor([0, height, width]).unsqueeze(0).expand(1, -1),
                 torch.tensor([self.lat_motion_frames, height,
-                              width]).unsqueeze(0).repeat(1, 1)
+                              width]).unsqueeze(0).expand(1, -1)
             ]]
             motion_rope_emb = rope_precompute(
                 flat_mot.detach().view(1, flat_mot.shape[1], self.num_heads,
@@ -520,11 +520,11 @@ class WanModel_S2V(ModelMixin, ConfigMixin):
             last_mot = [m.flatten(2).transpose(1, 2) for m in last_mot]
             last_mot = torch.cat(last_mot)
             gride_sizes = [[
-                torch.tensor([-1, 0, 0]).unsqueeze(0).repeat(batch_size, 1),
+                torch.tensor([-1, 0, 0]).unsqueeze(0).expand(batch_size, -1),
                 torch.tensor([0, height,
-                              width]).unsqueeze(0).repeat(batch_size, 1),
+                              width]).unsqueeze(0).expand(batch_size, -1),
                 torch.tensor([1, height,
-                              width]).unsqueeze(0).repeat(batch_size, 1)
+                              width]).unsqueeze(0).expand(batch_size, -1)
             ]]
         else:
             last_mot = torch.zeros([batch_size, 0, self.dim],
@@ -537,13 +537,13 @@ class WanModel_S2V(ModelMixin, ConfigMixin):
         if drop_motion_frames:
             zip_motion = zip_motion * 0.0
         zip_motion_grid_sizes = [[
-            torch.tensor([-1, 0, 0]).unsqueeze(0).repeat(batch_size, 1),
+            torch.tensor([-1, 0, 0]).unsqueeze(0).expand(batch_size, -1),
             torch.tensor([
                 0, self.motioner.motion_side_len, self.motioner.motion_side_len
-            ]).unsqueeze(0).repeat(batch_size, 1),
+            ]).unsqueeze(0).expand(batch_size, -1),
             torch.tensor(
                 [1 if not self.trainable_token_pos_emb else -1, height,
-                 width]).unsqueeze(0).repeat(batch_size, 1),
+                 width]).unsqueeze(0).expand(batch_size, -1),
         ]]
 
         mot = torch.cat([last_mot, zip_motion], dim=1)
@@ -681,7 +681,7 @@ class WanModel_S2V(ModelMixin, ConfigMixin):
         """
         add_last_motion = self.add_last_motion * add_last_motion
         audio_input = torch.cat([
-            audio_input[..., 0:1].repeat(1, 1, 1, motion_frames[0]), audio_input
+            audio_input[..., 0:1].expand(-1, -1, -1, motion_frames[0]), audio_input
         ],
                                 dim=-1)
         audio_emb_res = self.casual_audio_encoder(audio_input)
@@ -716,12 +716,12 @@ class WanModel_S2V(ModelMixin, ConfigMixin):
         batch_size = len(ref)
         height, width = ref[0].shape[3], ref[0].shape[4]
         ref_grid_sizes = [[
-            torch.tensor([30, 0, 0]).unsqueeze(0).repeat(batch_size,
-                                                         1),  # the start index
+            torch.tensor([30, 0, 0]).unsqueeze(0).expand(batch_size,
+                                                         -1),  # the start index
             torch.tensor([31, height,
-                          width]).unsqueeze(0).repeat(batch_size,
-                                                      1),  # the end index
-            torch.tensor([1, height, width]).unsqueeze(0).repeat(batch_size, 1),
+                          width]).unsqueeze(0).expand(batch_size,
+                                                      -1),  # the end index
+            torch.tensor([1, height, width]).unsqueeze(0).expand(batch_size, -1),
         ]  # the range
                          ]
 

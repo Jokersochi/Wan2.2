@@ -1,4 +1,4 @@
-## 2025-02-28 - [Sentinel] Fixed insecure assert usage in DashScopePromptExpander
-**Vulnerability:** The code used `assert` statements to validate HTTP response status codes and task parameters. When Python is executed with the `-O` optimization flag, these statements are ignored, potentially bypassing crucial logic or error handling for external API interactions.
-**Learning:** External API validation should always use explicit control flow and exceptions to guarantee reliable error state execution.
-**Prevention:** Use explicit `if` statements coupled with context-appropriate standard exceptions (like `ValueError` or `RuntimeError`) instead of `assert` to handle validation in production code environments.
+## 2025-05-24 - [Replaced assert-based validation with ValueError in generate.py]
+**Vulnerability:** The codebase relies on `assert` statements in `generate.py` for input validation and state checking (e.g., verifying `args.ckpt_dir`, `args.task`, etc.).
+**Learning:** `assert` statements are stripped when Python runs with optimization (`-O` or `-OO`). This removes all these checks during production, potentially allowing invalid states that could lead to crashes, unexpected behaviors, or other unhandled vulnerabilities.
+**Prevention:** Always use explicit conditional statements (e.g., `if not condition: raise ValueError("...")`) for any critical input validation or security logic, rather than relying on `assert`.

@@ -874,10 +874,11 @@ class WanModel_S2V(ModelMixin, ConfigMixin):
 
         c = self.out_dim
         out = []
-        for u, v in zip(x, grid_sizes.tolist()):
-            u = u[:v[0] * v[1] * v[2]].view(*v, *self.patch_size, c)
+        p0, p1, p2 = self.patch_size
+        for u, (v0, v1, v2) in zip(x, grid_sizes.tolist()):
+            u = u[:v0 * v1 * v2].view(v0, v1, v2, p0, p1, p2, c)
             u = u.permute(6, 0, 3, 1, 4, 2, 5)
-            u = u.reshape(c, v[0] * self.patch_size[0], v[1] * self.patch_size[1], v[2] * self.patch_size[2])
+            u = u.reshape(c, v0 * p0, v1 * p1, v2 * p2)
             out.append(u)
         return out
 

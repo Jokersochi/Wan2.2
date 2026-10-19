@@ -11,6 +11,7 @@ import imageio
 import torch
 import torchvision
 from tqdm import tqdm
+import tempfile
 
 __all__ = ['save_video', 'save_image', 'str2bool']
 
@@ -96,8 +97,11 @@ def save_video(tensor,
                normalize=True,
                value_range=(-1, 1)):
     # cache file
-    cache_file = osp.join('/tmp', rand_name(
-        suffix=suffix)) if save_file is None else save_file
+    if save_file is None:
+        fd, cache_file = tempfile.mkstemp(suffix=suffix)
+        os.close(fd)
+    else:
+        cache_file = save_file
 
     # save to cache
     try:

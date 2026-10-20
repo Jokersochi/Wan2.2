@@ -236,26 +236,26 @@ class WanAttentionBlock(nn.Module):
         """
         assert e.dtype == torch.float32
         with torch.amp.autocast('cuda', dtype=torch.float32):
-            e = (self.modulation.unsqueeze(0) + e).chunk(6, dim=2)
-        assert e[0].dtype == torch.float32
+            e0, e1, e2, e3, e4, e5 = (self.modulation.unsqueeze(0) + e).unbind(2)
+        assert e0.dtype == torch.float32
 
         # self-attention
         y = self.self_attn(
-            self.norm1(x).float() * (1 + e[1].squeeze(2)) + e[0].squeeze(2),
+            self.norm1(x).float() * (1 + e1) + e0,
             seq_lens, grid_sizes, freqs)
         with torch.amp.autocast('cuda', dtype=torch.float32):
-            x = x + y * e[2].squeeze(2)
+            x = x + y * e2
 
         # cross-attention & ffn function
-        def cross_attn_ffn(x, context, context_lens, e):
+        def cross_attn_ffn(x, context, context_lens, e3, e4, e5):
             x = x + self.cross_attn(self.norm3(x), context, context_lens)
             y = self.ffn(
-                self.norm2(x).float() * (1 + e[4].squeeze(2)) + e[3].squeeze(2))
+                self.norm2(x).float() * (1 + e4) + e3)
             with torch.amp.autocast('cuda', dtype=torch.float32):
-                x = x + y * e[5].squeeze(2)
+                x = x + y * e5
             return x
 
-        x = cross_attn_ffn(x, context, context_lens, e)
+        x = cross_attn_ffn(x, context, context_lens, e3, e4, e5)
         return x
 
 
@@ -284,10 +284,10 @@ class Head(nn.Module):
         """
         assert e.dtype == torch.float32
         with torch.amp.autocast('cuda', dtype=torch.float32):
-            e = (self.modulation.unsqueeze(0) + e.unsqueeze(2)).chunk(2, dim=2)
+            e0, e1 = (self.modulation.unsqueeze(0) + e.unsqueeze(2)).unbind(2)
             x = (
                 self.head(
-                    self.norm(x) * (1 + e[1].squeeze(2)) + e[0].squeeze(2)))
+                    self.norm(x) * (1 + e1) + e0))
         return x
 
 
@@ -515,9 +515,11 @@ class WanModel(ModelMixin, ConfigMixin):
         c = self.out_dim
         out = []
         for u, v in zip(x, grid_sizes.tolist()):
-            u = u[:v[0] * v[1] * v[2]].view(*v, *self.patch_size, c)
+            v0, v1, v2 = v
+            p0, p1, p2 = self.patch_size
+            u = u[:v0 * v1 * v2].view(*v, *self.patch_size, c)
             u = u.permute(6, 0, 3, 1, 4, 2, 5)
-            u = u.reshape(c, v[0] * self.patch_size[0], v[1] * self.patch_size[1], v[2] * self.patch_size[2])
+            u = u.reshape(c, v0 * p0, v1 * p1, v2 * p2)
             out.append(u)
         return out
 

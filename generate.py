@@ -104,7 +104,8 @@ def _validate_args(args):
 
 def _parse_args():
     parser = argparse.ArgumentParser(
-        description="Generate a image or video from a text prompt or image using Wan"
+        description="Generate a image or video from a text prompt or image using Wan",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
         "--task",

@@ -546,11 +546,11 @@ class MotionerTransformers(nn.Module, PeftAdapterMixin):
             for idx in sample_idx[0][::-1][::self.sample_c]:
                 tsm_frame_grid_sizes = [[
                     torch.tensor([idx, 0,
-                                  0]).unsqueeze(0).repeat(batch_size, 1),
+                                  0]).unsqueeze(0).expand(batch_size, -1),
                     torch.tensor([idx + 1, seq_h,
-                                  seq_w]).unsqueeze(0).repeat(batch_size, 1),
+                                  seq_w]).unsqueeze(0).expand(batch_size, -1),
                     torch.tensor([1, seq_h,
-                                  seq_w]).unsqueeze(0).repeat(batch_size, 1),
+                                  seq_w]).unsqueeze(0).expand(batch_size, -1),
                 ]]
                 grid_sizes += tsm_frame_grid_sizes
             seq_f = sample_idx[0][-1] + 1
@@ -562,13 +562,13 @@ class MotionerTransformers(nn.Module, PeftAdapterMixin):
         batch_size = len(x)
 
         token_grid_sizes = [[
-            torch.tensor([seq_f, 0, 0]).unsqueeze(0).repeat(batch_size, 1),
+            torch.tensor([seq_f, 0, 0]).unsqueeze(0).expand(batch_size, -1),
             torch.tensor(
                 [seq_f + 1, self.motion_side_len,
-                 self.motion_side_len]).unsqueeze(0).repeat(batch_size, 1),
+                 self.motion_side_len]).unsqueeze(0).expand(batch_size, -1),
             torch.tensor(
                 [1 if not self.trainable_token_pos_emb else -1, seq_h,
-                 seq_w]).unsqueeze(0).repeat(batch_size, 1),
+                 seq_w]).unsqueeze(0).expand(batch_size, -1),
         ]  # 第三行代表rope emb的想要覆盖到的范围
                            ]
 

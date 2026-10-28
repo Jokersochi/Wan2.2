@@ -2,3 +2,7 @@
 **Vulnerability:** The code used `assert` statements to validate HTTP response status codes and task parameters. When Python is executed with the `-O` optimization flag, these statements are ignored, potentially bypassing crucial logic or error handling for external API interactions.
 **Learning:** External API validation should always use explicit control flow and exceptions to guarantee reliable error state execution.
 **Prevention:** Use explicit `if` statements coupled with context-appropriate standard exceptions (like `ValueError` or `RuntimeError`) instead of `assert` to handle validation in production code environments.
+## 2025-02-20 - Fix insecure temporary file deletion in PromptExpander
+**Vulnerability:** Potential temporary file leak in `wan/utils/prompt_extend.py`. A temporary file was created with `tempfile.NamedTemporaryFile(delete=False)` and manually deleted via `os.remove(fname)` at the end of the method. If an exception occurred prior to `os.remove`, the file would be leaked on disk.
+**Learning:** Hardcoded sequential cleanup flows without `try...finally` (or equivalent context managers) are prone to leaks when interacting with external network calls (e.g. `dashscope` API) or arbitrary user input.
+**Prevention:** Always use a `try...finally` block when manual resource cleanup is required. Prefer `fd, path = tempfile.mkstemp()` combined with `os.close(fd)` for safer temporary file provisioning when passing filepaths to external APIs, ensuring cleanup in the `finally` block via `os.remove(path)`.

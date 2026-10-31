@@ -204,10 +204,8 @@ class WanS2VAttentionBlock(WanAttentionBlock):
         e = e[0]
         modulation = self.modulation.unsqueeze(2)
         with amp.autocast(dtype=torch.float32):
-            e = (modulation + e).chunk(6, dim=1)
+            e = (modulation + e).unbind(dim=1)
         assert e[0].dtype == torch.float32
-
-        e = [element.squeeze(1) for element in e]
         norm_x = self.norm1(x).float()
         parts = []
         for i in range(2):

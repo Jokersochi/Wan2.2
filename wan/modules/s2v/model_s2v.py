@@ -142,7 +142,7 @@ class Head_S2V(Head):
         """
         assert e.dtype == torch.float32
         with amp.autocast(dtype=torch.float32):
-            e = (self.modulation + e.unsqueeze(1)).chunk(2, dim=1)
+            e = (self.modulation + e.unsqueeze(1)).unbind(dim=1)
             x = (self.head(self.norm(x) * (1 + e[1]) + e[0]))
         return x
 
@@ -204,7 +204,7 @@ class WanS2VAttentionBlock(WanAttentionBlock):
         e = e[0]
         modulation = self.modulation.unsqueeze(2)
         with amp.autocast(dtype=torch.float32):
-            e = (modulation + e).chunk(6, dim=1)
+            e = (modulation + e).unbind(dim=1)
         assert e[0].dtype == torch.float32
 
         e = [element.squeeze(1) for element in e]

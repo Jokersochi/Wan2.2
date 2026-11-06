@@ -236,23 +236,23 @@ class WanAttentionBlock(nn.Module):
         """
         assert e.dtype == torch.float32
         with torch.amp.autocast('cuda', dtype=torch.float32):
-            e = (self.modulation.unsqueeze(0) + e).chunk(6, dim=2)
+            e = (self.modulation.unsqueeze(0) + e).unbind(dim=2)
         assert e[0].dtype == torch.float32
 
         # self-attention
         y = self.self_attn(
-            self.norm1(x).float() * (1 + e[1].squeeze(2)) + e[0].squeeze(2),
+            self.norm1(x).float() * (1 + e[1]) + e[0],
             seq_lens, grid_sizes, freqs)
         with torch.amp.autocast('cuda', dtype=torch.float32):
-            x = x + y * e[2].squeeze(2)
+            x = x + y * e[2]
 
         # cross-attention & ffn function
         def cross_attn_ffn(x, context, context_lens, e):
             x = x + self.cross_attn(self.norm3(x), context, context_lens)
             y = self.ffn(
-                self.norm2(x).float() * (1 + e[4].squeeze(2)) + e[3].squeeze(2))
+                self.norm2(x).float() * (1 + e[4]) + e[3])
             with torch.amp.autocast('cuda', dtype=torch.float32):
-                x = x + y * e[5].squeeze(2)
+                x = x + y * e[5]
             return x
 
         x = cross_attn_ffn(x, context, context_lens, e)
@@ -284,10 +284,10 @@ class Head(nn.Module):
         """
         assert e.dtype == torch.float32
         with torch.amp.autocast('cuda', dtype=torch.float32):
-            e = (self.modulation.unsqueeze(0) + e.unsqueeze(2)).chunk(2, dim=2)
+            e = (self.modulation.unsqueeze(0) + e.unsqueeze(2)).unbind(dim=2)
             x = (
                 self.head(
-                    self.norm(x) * (1 + e[1].squeeze(2)) + e[0].squeeze(2)))
+                    self.norm(x) * (1 + e[1]) + e[0]))
         return x
 
 

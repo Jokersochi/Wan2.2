@@ -200,6 +200,20 @@ class DashScopePromptExpander(PromptExpander):
                         seed=-1,
                         *args,
                         **kwargs):
+        """Expand a prompt with an image using DashScope's multimodal API.
+
+        Args:
+            prompt: Text prompt to expand.
+            system_prompt: Instructions guiding the expansion.
+            image: PIL image or image file path. An image is required.
+            seed: Random seed passed to DashScope.
+            *args: Additional positional arguments, currently unused.
+            **kwargs: Additional keyword arguments, currently unused.
+
+        Returns:
+            PromptOutput containing the expanded prompt on success, or the
+            original prompt and error details after all API attempts fail.
+        """
         if isinstance(image, str):
             image = Image.open(image).convert('RGB')
         w = image.width

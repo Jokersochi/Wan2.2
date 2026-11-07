@@ -209,12 +209,13 @@ class DashScopePromptExpander(PromptExpander):
         resized_h = round(math.sqrt(area * aspect_ratio))
         resized_w = round(math.sqrt(area / aspect_ratio))
         image = image.resize((resized_w, resized_h))
-        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as f:
-            image.save(f.name)
-            fname = f.name
-            image_path = f"file://{f.name}"
-
+        fname = None
         try:
+            with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as f:
+                fname = f.name
+                image.save(fname)
+                image_path = f"file://{fname}"
+
             prompt = f"{prompt}"
             messages = [
                 {
@@ -254,7 +255,7 @@ class DashScopePromptExpander(PromptExpander):
                     exception = e
             result_prompt = result_prompt.replace('\n', '\\n')
         finally:
-            if os.path.exists(fname):
+            if fname is not None and os.path.exists(fname):
                 os.remove(fname)
 
         return PromptOutput(

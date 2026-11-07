@@ -59,11 +59,27 @@ EXAMPLE_PROMPT = {
 }
 
 
-def _validate_args(args):
+def _validate_args(args, parser=None):
+    """Validate arguments and fill task defaults in the namespace in place.
+
+    Invalid arguments exit through ``parser.error`` when a parser is supplied;
+    otherwise, they raise ``ValueError``.
+    """
+    # Helper to handle validation errors gracefully
+    def _error(msg):
+        """Report a validation error through the parser or raise ValueError."""
+        if parser is not None:
+            parser.error(msg)
+        else:
+            raise ValueError(msg)
+
     # Basic check
-    assert args.ckpt_dir is not None, "Please specify the checkpoint directory."
-    assert args.task in WAN_CONFIGS, f"Unsupport task: {args.task}"
-    assert args.task in EXAMPLE_PROMPT, f"Unsupport task: {args.task}"
+    if args.ckpt_dir is None:
+        _error("Please specify the checkpoint directory.")
+    if args.task not in WAN_CONFIGS:
+        _error(f"Unsupport task: {args.task}")
+    if args.task not in EXAMPLE_PROMPT:
+        _error(f"Unsupport task: {args.task}")
 
     if args.prompt is None:
         args.prompt = EXAMPLE_PROMPT[args.task]["prompt"]
@@ -77,7 +93,8 @@ def _validate_args(args):
         args.tts_text = EXAMPLE_PROMPT[args.task]["tts_text"]
 
     if args.task == "i2v-A14B":
-        assert args.image is not None, "Please specify the image path for i2v."
+        if args.image is None:
+            _error("Please specify the image path for i2v.")
 
     cfg = WAN_CONFIGS[args.task]
 
@@ -97,12 +114,12 @@ def _validate_args(args):
         0, sys.maxsize)
     # Size check
     if not 's2v' in args.task:
-        assert args.size in SUPPORTED_SIZES[
-            args.
-            task], f"Unsupport size {args.size} for task {args.task}, supported sizes are: {', '.join(SUPPORTED_SIZES[args.task])}"
+        if args.size not in SUPPORTED_SIZES[args.task]:
+            _error(f"Unsupport size {args.size} for task {args.task}, supported sizes are: {', '.join(SUPPORTED_SIZES[args.task])}")
 
 
 def _parse_args():
+    """Parse CLI options and return the validated namespace with task defaults."""
     parser = argparse.ArgumentParser(
         description="Generate a image or video from a text prompt or image using Wan"
     )
@@ -295,7 +312,7 @@ def _parse_args():
         help="Number of frames per clip, 48 or 80 or others (must be multiple of 4) for 14B s2v"
     )
     args = parser.parse_args()
-    _validate_args(args)
+    _validate_args(args, parser=parser)
 
     return args
 

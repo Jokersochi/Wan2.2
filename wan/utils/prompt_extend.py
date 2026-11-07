@@ -200,6 +200,20 @@ class DashScopePromptExpander(PromptExpander):
                         seed=-1,
                         *args,
                         **kwargs):
+        """Expand a prompt with an image using DashScope's multimodal API.
+
+        Args:
+            prompt: Text prompt to expand.
+            system_prompt: Instructions guiding the expansion.
+            image: PIL image or image file path. An image is required.
+            seed: Random seed passed to DashScope.
+            *args: Additional positional arguments, currently unused.
+            **kwargs: Additional keyword arguments, currently unused.
+
+        Returns:
+            PromptOutput containing the expanded prompt on success, or the
+            original prompt and error details after all API attempts fail.
+        """
         if isinstance(image, str):
             image = Image.open(image).convert('RGB')
         w = image.width
@@ -209,49 +223,54 @@ class DashScopePromptExpander(PromptExpander):
         resized_h = round(math.sqrt(area * aspect_ratio))
         resized_w = round(math.sqrt(area / aspect_ratio))
         image = image.resize((resized_w, resized_h))
-        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as f:
-            image.save(f.name)
-            fname = f.name
-            image_path = f"file://{f.name}"
-        prompt = f"{prompt}"
-        messages = [
-            {
-                'role': 'system',
-                'content': [{
-                    "text": system_prompt
-                }]
-            },
-            {
-                'role': 'user',
-                'content': [{
-                    "text": prompt
-                }, {
-                    "image": image_path
-                }]
-            },
-        ]
-        response = None
-        result_prompt = prompt
-        exception = None
-        status = False
-        for _ in range(self.retry_times):
-            try:
-                response = dashscope.MultiModalConversation.call(
-                    self.model,
-                    messages=messages,
-                    seed=seed,
-                    result_format='message',  # set the result to be "message" format.
-                )
-                if response.status_code != HTTPStatus.OK:
-                    raise RuntimeError(f"DashScope API failed: {response}")
-                result_prompt = response['output']['choices'][0]['message'][
-                    'content'][0]['text'].replace('\n', '\\n')
-                status = True
-                break
-            except Exception as e:
-                exception = e
-        result_prompt = result_prompt.replace('\n', '\\n')
-        os.remove(fname)
+        fname = None
+        try:
+            with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as f:
+                fname = f.name
+                image.save(fname)
+                image_path = f"file://{fname}"
+
+            prompt = f"{prompt}"
+            messages = [
+                {
+                    'role': 'system',
+                    'content': [{
+                        "text": system_prompt
+                    }]
+                },
+                {
+                    'role': 'user',
+                    'content': [{
+                        "text": prompt
+                    }, {
+                        "image": image_path
+                    }]
+                },
+            ]
+            response = None
+            result_prompt = prompt
+            exception = None
+            status = False
+            for _ in range(self.retry_times):
+                try:
+                    response = dashscope.MultiModalConversation.call(
+                        self.model,
+                        messages=messages,
+                        seed=seed,
+                        result_format='message',  # set the result to be "message" format.
+                    )
+                    if response.status_code != HTTPStatus.OK:
+                        raise RuntimeError(f"DashScope API failed: {response}")
+                    result_prompt = response['output']['choices'][0]['message'][
+                        'content'][0]['text'].replace('\n', '\\n')
+                    status = True
+                    break
+                except Exception as e:
+                    exception = e
+            result_prompt = result_prompt.replace('\n', '\\n')
+        finally:
+            if fname is not None and os.path.exists(fname):
+                os.remove(fname)
 
         return PromptOutput(
             status=status,

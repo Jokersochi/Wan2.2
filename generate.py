@@ -60,8 +60,14 @@ EXAMPLE_PROMPT = {
 
 
 def _validate_args(args, parser=None):
+    """Validate arguments and fill task defaults in the namespace in place.
+
+    Invalid arguments exit through ``parser.error`` when a parser is supplied;
+    otherwise, they raise ``ValueError``.
+    """
     # Helper to handle validation errors gracefully
     def _error(msg):
+        """Report a validation error through the parser or raise ValueError."""
         if parser is not None:
             parser.error(msg)
         else:
@@ -113,6 +119,7 @@ def _validate_args(args, parser=None):
 
 
 def _parse_args():
+    """Parse CLI options and return the validated namespace with task defaults."""
     parser = argparse.ArgumentParser(
         description="Generate a image or video from a text prompt or image using Wan"
     )

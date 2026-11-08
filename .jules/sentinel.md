@@ -2,3 +2,7 @@
 **Vulnerability:** The code used `assert` statements to validate HTTP response status codes and task parameters. When Python is executed with the `-O` optimization flag, these statements are ignored, potentially bypassing crucial logic or error handling for external API interactions.
 **Learning:** External API validation should always use explicit control flow and exceptions to guarantee reliable error state execution.
 **Prevention:** Use explicit `if` statements coupled with context-appropriate standard exceptions (like `ValueError` or `RuntimeError`) instead of `assert` to handle validation in production code environments.
+## 2024-11-08 - Prevent Temporary File Exhaustion (CWE-459)
+**Vulnerability:** The codebase used `tempfile.NamedTemporaryFile(delete=False)` and only explicitly removed the file upon successful completion of subsequent API calls. If an exception occurred (e.g., HTTP failure, parsing error), the temporary file remained on disk, introducing a resource leak (CWE-459) that an attacker could exploit to exhaust inodes or disk space (Denial of Service).
+**Learning:** Incomplete cleanup in exception paths when using temporary files creates a persistent footprint that degrades system stability over time.
+**Prevention:** Prefer `fd, path = tempfile.mkstemp()` combined with `os.close(fd)` instead of `NamedTemporaryFile()`. Crucially, always wrap all subsequent file operations in a `try...finally` block, ensuring `os.remove(path)` is strictly executed in the `finally` clause to guarantee cleanup under all conditions.

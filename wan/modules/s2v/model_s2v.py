@@ -204,43 +204,42 @@ class WanS2VAttentionBlock(WanAttentionBlock):
         e = e[0]
         modulation = self.modulation.unsqueeze(2)
         with amp.autocast(dtype=torch.float32):
-            e = (modulation + e).chunk(6, dim=1)
-        assert e[0].dtype == torch.float32
+            e0, e1, e2, e3, e4, e5 = (modulation + e).unbind(dim=1)
+        assert e0.dtype == torch.float32
 
-        e = [element.squeeze(1) for element in e]
         norm_x = self.norm1(x).float()
         parts = []
         for i in range(2):
             parts.append(norm_x[:, seg_idx[i]:seg_idx[i + 1]] *
-                         (1 + e[1][:, i:i + 1]) + e[0][:, i:i + 1])
+                         (1 + e1[:, i:i + 1]) + e0[:, i:i + 1])
         norm_x = torch.cat(parts, dim=1)
         # self-attention
         y = self.self_attn(norm_x, seq_lens, grid_sizes, freqs)
         with amp.autocast(dtype=torch.float32):
             z = []
             for i in range(2):
-                z.append(y[:, seg_idx[i]:seg_idx[i + 1]] * e[2][:, i:i + 1])
+                z.append(y[:, seg_idx[i]:seg_idx[i + 1]] * e2[:, i:i + 1])
             y = torch.cat(z, dim=1)
             x = x + y
         # cross-attention & ffn function
-        def cross_attn_ffn(x, context, context_lens, e):
+        def cross_attn_ffn(x, context, context_lens, e3, e4, e5):
             x = x + self.cross_attn(self.norm3(x), context, context_lens)
             norm2_x = self.norm2(x).float()
             parts = []
             for i in range(2):
                 parts.append(norm2_x[:, seg_idx[i]:seg_idx[i + 1]] *
-                             (1 + e[4][:, i:i + 1]) + e[3][:, i:i + 1])
+                             (1 + e4[:, i:i + 1]) + e3[:, i:i + 1])
             norm2_x = torch.cat(parts, dim=1)
             y = self.ffn(norm2_x)
             with amp.autocast(dtype=torch.float32):
                 z = []
                 for i in range(2):
-                    z.append(y[:, seg_idx[i]:seg_idx[i + 1]] * e[5][:, i:i + 1])
+                    z.append(y[:, seg_idx[i]:seg_idx[i + 1]] * e5[:, i:i + 1])
                 y = torch.cat(z, dim=1)
                 x = x + y
             return x
 
-        x = cross_attn_ffn(x, context, context_lens, e)
+        x = cross_attn_ffn(x, context, context_lens, e3, e4, e5)
         return x
 
 

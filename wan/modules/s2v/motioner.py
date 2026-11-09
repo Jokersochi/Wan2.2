@@ -268,7 +268,7 @@ class CasualSelfAttention(SelfAttention):
         ref_q = q[-1:]
         q = q[:-1]
 
-        grid_sizes = torch.tensor([[1, H, W]] * q.shape[0], dtype=torch.long)
+        grid_sizes = torch.tensor([[1, H, W]], dtype=torch.long).expand(q.shape[0], -1)
         start = [[shifting, 0, 0]] * q.shape[0]
         q = rope_apply(q, grid_sizes, freqs, start=start)
 

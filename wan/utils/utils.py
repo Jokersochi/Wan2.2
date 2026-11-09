@@ -95,9 +95,15 @@ def save_video(tensor,
                nrow=8,
                normalize=True,
                value_range=(-1, 1)):
+    import tempfile
     # cache file
-    cache_file = osp.join('/tmp', rand_name(
-        suffix=suffix)) if save_file is None else save_file
+    is_temp = False
+    if save_file is None:
+        fd, cache_file = tempfile.mkstemp(suffix=suffix)
+        os.close(fd)
+        is_temp = True
+    else:
+        cache_file = save_file
 
     # save to cache
     try:
@@ -119,6 +125,9 @@ def save_video(tensor,
         writer.close()
     except Exception as e:
         logging.info(f'save_video failed, error: {e}')
+    finally:
+        if is_temp and os.path.exists(cache_file):
+            os.remove(cache_file)
 
 
 def save_image(tensor, save_file, nrow=8, normalize=True, value_range=(-1, 1)):

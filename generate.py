@@ -117,11 +117,26 @@ def _validate_args(args, parser=None):
         if args.size not in SUPPORTED_SIZES[args.task]:
             _error(f"Unsupport size {args.size} for task {args.task}, supported sizes are: {', '.join(SUPPORTED_SIZES[args.task])}")
 
+    world_size = int(os.getenv("WORLD_SIZE", 1))
+    if world_size <= 1:
+        if args.t5_fsdp or args.dit_fsdp:
+            _error("t5_fsdp and dit_fsdp are not supported in non-distributed environments.")
+        if args.ulysses_size > 1:
+            _error("sequence parallel are not supported in non-distributed environments.")
+
+    if args.ulysses_size > 1:
+        if args.ulysses_size != world_size:
+            _error("The number of ulysses_size should be equal to the world size.")
+        cfg_for_check = WAN_CONFIGS[args.task]
+        if cfg_for_check.num_heads % args.ulysses_size != 0:
+            _error(f"`cfg.num_heads={cfg_for_check.num_heads}` cannot be divided evenly by `args.ulysses_size={args.ulysses_size}`.")
+
 
 def _parse_args():
     """Parse CLI options and return the validated namespace with task defaults."""
     parser = argparse.ArgumentParser(
-        description="Generate a image or video from a text prompt or image using Wan"
+        description="Generate a image or video from a text prompt or image using Wan",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
         "--task",
@@ -347,16 +362,8 @@ def generate(args):
             init_method="env://",
             rank=rank,
             world_size=world_size)
-    else:
-        assert not (
-            args.t5_fsdp or args.dit_fsdp
-        ), f"t5_fsdp and dit_fsdp are not supported in non-distributed environments."
-        assert not (
-            args.ulysses_size > 1
-        ), f"sequence parallel are not supported in non-distributed environments."
 
     if args.ulysses_size > 1:
-        assert args.ulysses_size == world_size, f"The number of ulysses_size should be equal to the world size."
         init_distributed_group()
 
     if args.use_prompt_extend:
@@ -376,8 +383,6 @@ def generate(args):
                 f"Unsupport prompt_extend_method: {args.prompt_extend_method}")
 
     cfg = WAN_CONFIGS[args.task]
-    if args.ulysses_size > 1:
-        assert cfg.num_heads % args.ulysses_size == 0, f"`{cfg.num_heads=}` cannot be divided evenly by `{args.ulysses_size=}`."
 
     logging.info(f"Generation job args: {args}")
     logging.info(f"Generation model config: {cfg}")

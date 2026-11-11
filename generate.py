@@ -121,7 +121,8 @@ def _validate_args(args, parser=None):
 def _parse_args():
     """Parse CLI options and return the validated namespace with task defaults."""
     parser = argparse.ArgumentParser(
-        description="Generate a image or video from a text prompt or image using Wan"
+        description="Generate a image or video from a text prompt or image using Wan",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument(
         "--task",

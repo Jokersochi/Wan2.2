@@ -46,7 +46,7 @@ class HeadAnimate(Head):
         """
         assert e.dtype == torch.float32
         with amp.autocast(dtype=torch.float32):
-            e = (self.modulation + e.unsqueeze(1)).chunk(2, dim=1)
+            e = (self.modulation + e.unsqueeze(1)).unbind(dim=1)
             x = (self.head(self.norm(x) * (1 + e[1]) + e[0]))
         return x
 
@@ -205,7 +205,7 @@ class WanAnimateAttentionBlock(nn.Module):
         """
         assert e.dtype == torch.float32
         with amp.autocast(dtype=torch.float32):
-            e = (self.modulation + e).chunk(6, dim=1)
+            e = (self.modulation + e).unbind(dim=1)
         assert e[0].dtype == torch.float32
 
         # self-attention

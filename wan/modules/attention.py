@@ -62,9 +62,8 @@ def flash_attention(
     # preprocess query
     if q_lens is None:
         q = half(q.flatten(0, 1))
-        q_lens = torch.tensor(
-            [lq] * b, dtype=torch.int32).to(
-                device=q.device, non_blocking=True)
+        q_lens = torch.full(
+            (b,), lq, dtype=torch.int32, device=q.device)
     else:
         q = half(torch.cat([u[:v] for u, v in zip(q, q_lens)]))
 
@@ -72,9 +71,8 @@ def flash_attention(
     if k_lens is None:
         k = half(k.flatten(0, 1))
         v = half(v.flatten(0, 1))
-        k_lens = torch.tensor(
-            [lk] * b, dtype=torch.int32).to(
-                device=k.device, non_blocking=True)
+        k_lens = torch.full(
+            (b,), lk, dtype=torch.int32, device=k.device)
     else:
         k = half(torch.cat([u[:v] for u, v in zip(k, k_lens)]))
         v = half(torch.cat([u[:v] for u, v in zip(v, k_lens)]))

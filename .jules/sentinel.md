@@ -1,4 +1,4 @@
-## 2025-02-28 - [Sentinel] Fixed insecure assert usage in DashScopePromptExpander
-**Vulnerability:** The code used `assert` statements to validate HTTP response status codes and task parameters. When Python is executed with the `-O` optimization flag, these statements are ignored, potentially bypassing crucial logic or error handling for external API interactions.
-**Learning:** External API validation should always use explicit control flow and exceptions to guarantee reliable error state execution.
-**Prevention:** Use explicit `if` statements coupled with context-appropriate standard exceptions (like `ValueError` or `RuntimeError`) instead of `assert` to handle validation in production code environments.
+## 2024-10-25 - Tempfile Leak in Exception Handling
+**Vulnerability:** A temporary file is created using `tempfile.NamedTemporaryFile(suffix='.png', delete=False)` in `wan/utils/prompt_extend.py`. The file deletion `os.remove(fname)` occurs outside a `finally` block and may be bypassed if an unhandled exception occurs (CWE-459). In this codebase, if the Dashscope API fails all retries, the loop sets `exception`, but any unexpected Python error during the generation process itself could cause the file deletion to be skipped. Using `tempfile.mkstemp` and explicit file descriptor closing with `os.remove` in a `finally` block is safer.
+**Learning:** `NamedTemporaryFile(delete=False)` requires careful cleanup.
+**Prevention:** Use `tempfile.mkstemp` and explicitly clean up resources in a `finally` block.

@@ -1,3 +1,6 @@
 ## 2024-04-19 - unpatchify loop overhead
 **Learning:** In Python/PyTorch high-frequency code paths like the 'unpatchify' loop, replacing generalized functional constructs like `math.prod` and list comprehensions with `zip` with direct tuple unpacking and scalar multiplication (e.g., `v[0] * v[1] * v[2]`) reduces execution overhead significantly.
 **Action:** Replace `math.prod(v)` and `[i * j for i, j in zip(v, self.patch_size)]` with explicit unpacks like `v[0] * v[1] * v[2]` and direct multiplication elements `v[0] * self.patch_size[0]`, etc.
+## 2024-10-30 - Replace PyTorch .chunk(N, dim=D) + .squeeze(D) with .unbind(dim=D)
+**Learning:** PyTorch's `.chunk(N, dim=D)` followed by `.squeeze(D)` is a common anti-pattern that creates intermediate tensors and requires multiple Python function calls. Using `.unbind(dim=D)` achieves the same result (a tuple of tensors with the specified dimension removed) directly in C++, reducing memory allocations and Python overhead in hot loops like attention blocks.
+**Action:** Identify `.chunk()` followed by `.squeeze()` in PyTorch models and replace them with `.unbind()`. Ensure the squeezed dimension is exactly the one being chunked, as `.unbind()` removes the dimension, whereas `.chunk()` leaves it with size 1.

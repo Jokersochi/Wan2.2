@@ -2,3 +2,7 @@
 **Vulnerability:** The code used `assert` statements to validate HTTP response status codes and task parameters. When Python is executed with the `-O` optimization flag, these statements are ignored, potentially bypassing crucial logic or error handling for external API interactions.
 **Learning:** External API validation should always use explicit control flow and exceptions to guarantee reliable error state execution.
 **Prevention:** Use explicit `if` statements coupled with context-appropriate standard exceptions (like `ValueError` or `RuntimeError`) instead of `assert` to handle validation in production code environments.
+## 2025-02-28 - [Sentinel] Fixed insecure temporary file handling in prompt_extend
+**Vulnerability:** The code used `tempfile.NamedTemporaryFile(delete=False)` and handled the cleanup using `os.remove(fname)` at the end of the execution block. However, if any exceptions occurred during the external API interaction loop, the execution bypassed the cleanup, resulting in file handle leaks and leaving temporary files permanently stored on the filesystem.
+**Learning:** External API interactions are prone to failure and timeouts, which must be fully anticipated around temporary resource scopes.
+**Prevention:** Always wrap resource initialization that disables automatic deletion (like `delete=False`) in a `try...finally` block to strictly enforce cleanup. On Windows, move file-writing operations outside of the `with NamedTemporaryFile(...)` context block to circumvent multi-process access permissions issues.

@@ -95,11 +95,8 @@ def attention(
             else:
                 attn_bias += attn_mask
 
-        attn = (q @ k.transpose(-2, -1)) * scale_factor
-        attn += attn_bias
-        attn = attn.softmax(dim=-1)
-        attn = torch.dropout(attn, p=drop_rate, train=True)
-        x = attn @ v
+        x = F.scaled_dot_product_attention(
+            q, k, v, attn_mask=attn_bias, dropout_p=drop_rate, scale=scale_factor)
     else:
         raise NotImplementedError(f"Unsupported attention mode: {mode}")
 

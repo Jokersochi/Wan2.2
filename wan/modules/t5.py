@@ -109,9 +109,15 @@ class T5Attention(nn.Module):
             attn_bias.masked_fill_(mask == 0, torch.finfo(x.dtype).min)
 
         # compute attention (T5 does not use scaling)
-        attn = torch.einsum('binc,bjnc->bnij', q, k) + attn_bias
-        attn = F.softmax(attn.float(), dim=-1).type_as(attn)
-        x = torch.einsum('bnij,bjnc->binc', attn, v)
+        # ⚡ Bolt: Replace manual einsum+softmax with SDPA for significant speedup and memory reduction. scale=1.0 ensures T5's unscaled attention is preserved.
+        x = F.scaled_dot_product_attention(
+            q.transpose(1, 2),
+            k.transpose(1, 2),
+            v.transpose(1, 2),
+            attn_mask=attn_bias,
+            dropout_p=0.0,
+            scale=1.0
+        ).transpose(1, 2)
 
         # output
         x = x.reshape(b, -1, n * c)

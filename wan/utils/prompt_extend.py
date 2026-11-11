@@ -213,45 +213,48 @@ class DashScopePromptExpander(PromptExpander):
             image.save(f.name)
             fname = f.name
             image_path = f"file://{f.name}"
-        prompt = f"{prompt}"
-        messages = [
-            {
-                'role': 'system',
-                'content': [{
-                    "text": system_prompt
-                }]
-            },
-            {
-                'role': 'user',
-                'content': [{
-                    "text": prompt
-                }, {
-                    "image": image_path
-                }]
-            },
-        ]
-        response = None
-        result_prompt = prompt
-        exception = None
-        status = False
-        for _ in range(self.retry_times):
-            try:
-                response = dashscope.MultiModalConversation.call(
-                    self.model,
-                    messages=messages,
-                    seed=seed,
-                    result_format='message',  # set the result to be "message" format.
-                )
-                if response.status_code != HTTPStatus.OK:
-                    raise RuntimeError(f"DashScope API failed: {response}")
-                result_prompt = response['output']['choices'][0]['message'][
-                    'content'][0]['text'].replace('\n', '\\n')
-                status = True
-                break
-            except Exception as e:
-                exception = e
-        result_prompt = result_prompt.replace('\n', '\\n')
-        os.remove(fname)
+        try:
+            prompt = f"{prompt}"
+            messages = [
+                {
+                    'role': 'system',
+                    'content': [{
+                        "text": system_prompt
+                    }]
+                },
+                {
+                    'role': 'user',
+                    'content': [{
+                        "text": prompt
+                    }, {
+                        "image": image_path
+                    }]
+                },
+            ]
+            response = None
+            result_prompt = prompt
+            exception = None
+            status = False
+            for _ in range(self.retry_times):
+                try:
+                    response = dashscope.MultiModalConversation.call(
+                        self.model,
+                        messages=messages,
+                        seed=seed,
+                        result_format='message',  # set the result to be "message" format.
+                    )
+                    if response.status_code != HTTPStatus.OK:
+                        raise RuntimeError(f"DashScope API failed: {response}")
+                    result_prompt = response['output']['choices'][0]['message'][
+                        'content'][0]['text'].replace('\n', '\\n')
+                    status = True
+                    break
+                except Exception as e:
+                    exception = e
+            result_prompt = result_prompt.replace('\n', '\\n')
+        finally:
+            if os.path.exists(fname):
+                os.remove(fname)
 
         return PromptOutput(
             status=status,

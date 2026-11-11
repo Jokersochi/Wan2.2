@@ -46,8 +46,7 @@ def init_weights(m):
 class GELU(nn.Module):
 
     def forward(self, x):
-        return 0.5 * x * (1.0 + torch.tanh(
-            math.sqrt(2.0 / math.pi) * (x + 0.044715 * torch.pow(x, 3.0))))
+        return F.gelu(x, approximate='tanh')
 
 
 class T5LayerNorm(nn.Module):
